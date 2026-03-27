@@ -1,0 +1,170 @@
+/* MobileRecorder.css — grabador de audio/video móvil (ruta pública /grabar/:token) */
+
+.mobile-recorder {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  text-align: center;
+}
+
+.mobile-recorder h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #1a1a2e;
+}
+
+.mobile-recorder .recorder-info {
+  color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  max-width: 320px;
+}
+
+.mobile-recorder .recorder-info .stimulus-text {
+  font-weight: 600;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+  display: block;
+  margin-top: 0.4rem;
+}
+
+/* Botón circular grande de grabar */
+.record-btn {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 4px solid #dc3545;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 1rem 0;
+}
+
+.record-btn:active {
+  transform: scale(0.95);
+}
+
+.record-btn .inner-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #dc3545;
+  transition: all 0.3s ease;
+}
+
+.record-btn.recording .inner-circle {
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  background: #dc3545;
+  animation: pulse-rec 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-rec {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.record-timer {
+  font-size: 1.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #dc3545;
+  margin-bottom: 0.5rem;
+}
+
+/* Preview */
+.preview-section {
+  width: 100%;
+  max-width: 400px;
+  margin: 1rem 0;
+}
+
+.preview-section audio,
+.preview-section video {
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* Acciones */
+.recorder-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.btn-rerecord {
+  padding: 0.7rem 1.5rem;
+  border-radius: 8px;
+  border: 2px solid #6c757d;
+  background: #fff;
+  color: #6c757d;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-confirm {
+  padding: 0.7rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  background: #28a745;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Estados */
+.recorder-status {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.recorder-status.uploading {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.recorder-status.success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.recorder-status.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.recorder-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.recorder-loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e0e0e0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

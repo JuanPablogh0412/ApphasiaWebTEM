@@ -12,6 +12,9 @@ import ExerciseEditor from "../editExercises/VNESTEditor";
 import SREditor from "../editExercises/SREditor";
 import VNESTExerciseModal from "./VNESTExerciseModal";
 import SRExerciseModal from "./SRExerciseModal";
+import TEMTable from "./TEMTable";
+import TEMStimulusModal from "./TEMStimulusModal";
+import { subscribeTEMStimuli } from "../../services/temService";
 import { auth } from "../../services/firebase";
 
 import "./EjerciciosTerapeuta.css";
@@ -23,6 +26,9 @@ const EjerciciosTerapeuta = () => {
   const [showSREditor, setShowSREditor] = useState(false);
   const [showVnestViewer, setShowVnestViewer] = useState(false);
   const [showSRViewer, setShowSRViewer] = useState(false);
+  const [showTEMViewer, setShowTEMViewer] = useState(false);
+  const [selectedStimulus, setSelectedStimulus] = useState(null);
+  const [temStimuli, setTemStimuli] = useState([]);
   const [activeTerapia, setActiveTerapia] = useState("VNEST");
   const [loadingModal, setLoadingModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -99,7 +105,13 @@ const EjerciciosTerapeuta = () => {
       return () => unsubscribeExercises && unsubscribeExercises();
     });
 
-    return () => unsubscribeAuth();
+    // Suscribirse a estímulos TEM (independiente del auth)
+    const unsubTEM = subscribeTEMStimuli(setTemStimuli);
+
+    return () => {
+      unsubscribeAuth();
+      unsubTEM();
+    };
   }, [navigate, refreshKey]);
 
   const handleEdit = async (exercise) => {
@@ -161,7 +173,7 @@ const EjerciciosTerapeuta = () => {
 
         <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <div className="terapia-tabs">
-            {["VNEST", "SR"].map((terapia) => (
+            {["VNEST", "SR", "TEM"].map((terapia) => (
               <button
                 key={terapia}
                 className={`tab-btn ${
@@ -183,6 +195,16 @@ const EjerciciosTerapeuta = () => {
               <i className="bi bi-plus-lg"></i> Nuevo ejercicio VNEST
             </button>
           )}
+
+          {activeTerapia === "TEM" && (
+            <button
+              onClick={() => navigate("/ejercicios/nuevo-tem")}
+              className="btn btn-primary fw-semibold d-flex align-items-center"
+              disabled={!therapistId}
+            >
+              <i className="bi bi-plus-lg"></i> Nuevo estímulo TEM
+            </button>
+          )}
         </div>
 
         {activeTerapia === "VNEST" ? (
@@ -191,11 +213,19 @@ const EjerciciosTerapeuta = () => {
             onEdit={handleEdit}
             onView={handleViewExercise}
           />
-        ) : (
+        ) : activeTerapia === "SR" ? (
           <SRETable
             exercises={exercises}
             onEdit={handleEdit}
             onView={handleViewExercise}
+          />
+        ) : (
+          <TEMTable
+            stimuli={temStimuli}
+            onView={(s) => {
+              setSelectedStimulus(s);
+              setShowTEMViewer(true);
+            }}
           />
         )}
       </main>
@@ -231,6 +261,16 @@ const EjerciciosTerapeuta = () => {
           onClose={() => {
             setShowSRViewer(false);
             setSelectedExercise(null);
+          }}
+        />
+      )}
+
+      {showTEMViewer && selectedStimulus && (
+        <TEMStimulusModal
+          stimulus={selectedStimulus}
+          onClose={() => {
+            setShowTEMViewer(false);
+            setSelectedStimulus(null);
           }}
         />
       )}

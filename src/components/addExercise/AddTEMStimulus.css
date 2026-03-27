@@ -1,0 +1,404 @@
+/* AddTEMStimulus.css — Wizard para crear estímulo TEM */
+
+.tem-wizard-page {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  padding: 2rem 1rem 3rem;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.tem-wizard-page .page-title {
+  color: #c17d5e;
+  font-weight: 700;
+  font-size: 1.7rem;
+  margin-bottom: 0.3rem;
+  text-align: center;
+}
+
+.tem-wizard-page .page-subtitle {
+  color: #666;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 0.93rem;
+}
+
+/* ── Stepper ── */
+.tem-stepper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.tem-step-indicator {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 2px solid #ddd;
+  color: #999;
+  background: #fff;
+  transition: all 0.25s ease;
+}
+
+.tem-step-indicator.active {
+  border-color: #da9371;
+  color: #fff;
+  background: #da9371;
+}
+
+.tem-step-indicator.done {
+  border-color: #5cb85c;
+  color: #fff;
+  background: #5cb85c;
+}
+
+.tem-step-line {
+  width: 40px;
+  height: 2px;
+  background: #ddd;
+}
+
+.tem-step-line.done {
+  background: #5cb85c;
+}
+
+/* ── Card principal ── */
+.tem-wizard-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f2f2f2;
+  width: 100%;
+  max-width: 700px;
+  transition: box-shadow 0.2s ease;
+}
+
+.tem-wizard-card:hover {
+  box-shadow: 0 12px 28px rgba(218, 147, 113, 0.15);
+}
+
+.tem-wizard-card h3 {
+  color: #c17d5e;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  font-size: 1.15rem;
+}
+
+/* ── Form fields ── */
+.tem-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.tem-field label {
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 0.3rem;
+  font-size: 0.92rem;
+}
+
+.tem-field input[type="text"],
+.tem-field input[type="url"],
+.tem-field textarea,
+.tem-field select {
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 1rem;
+  color: #222;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tem-field input:focus,
+.tem-field textarea:focus,
+.tem-field select:focus {
+  border-color: #da9371;
+  box-shadow: 0 0 0 3px rgba(218, 147, 113, 0.15);
+  outline: none;
+}
+
+.tem-field textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.tem-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ── Syllable chips ── */
+.tem-syllable-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.tem-syllable-chip {
+  background: #fffaf5;
+  border: 1px solid rgba(218, 147, 113, 0.35);
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #c17d5e;
+}
+
+/* ── Tonal pattern buttons ── */
+.tem-tonal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.tem-tonal-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 0.4rem;
+  border: 1px solid #ddd;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tem-tonal-btn.high {
+  background: #da9371;
+  color: #fff;
+  border-color: #c17d5e;
+}
+
+.tem-tonal-btn.low {
+  background: #f5f5f5;
+  color: #666;
+  border-color: #ccc;
+}
+
+/* ── Validation panel ── */
+.tem-validation-panel {
+  margin-top: 1rem;
+  border-radius: 0.6rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.88rem;
+}
+
+.tem-validation-panel.valid {
+  background: #eaf7ea;
+  border: 1px solid #5cb85c;
+  color: #2d6a2d;
+}
+
+.tem-validation-panel.invalid {
+  background: #ffeaea;
+  border: 1px solid #d9534f;
+  color: #8b2020;
+}
+
+.tem-validation-panel ul {
+  margin: 0.3rem 0 0 1.2rem;
+  padding: 0;
+}
+
+.tem-validation-panel li {
+  margin-bottom: 0.15rem;
+}
+
+.tem-validation-warnings {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  color: #8a6d3b;
+}
+
+/* ── Navigation buttons ── */
+.tem-wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  gap: 1rem;
+}
+
+.tem-btn {
+  padding: 0.65rem 1.5rem;
+  border-radius: 0.6rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.tem-btn-back {
+  background: #f0f0f0;
+  color: #555;
+}
+
+.tem-btn-back:hover {
+  background: #e0e0e0;
+}
+
+.tem-btn-next {
+  background: #da9371;
+  color: #fff;
+}
+
+.tem-btn-next:hover {
+  background: #c17d5e;
+  transform: translateY(-1px);
+}
+
+.tem-btn-next:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tem-btn-save {
+  background: #5cb85c;
+  color: #fff;
+}
+
+.tem-btn-save:hover {
+  background: #4cae4c;
+  transform: translateY(-1px);
+}
+
+.tem-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Image preview ── */
+.tem-image-preview {
+  margin-top: 0.5rem;
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 0.5rem;
+  object-fit: contain;
+  border: 1px solid #eee;
+}
+
+.tem-image-upload-area {
+  border: 2px dashed #ddd;
+  border-radius: 0.6rem;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  color: #999;
+  font-size: 0.92rem;
+}
+
+.tem-image-upload-area:hover {
+  border-color: #da9371;
+  color: #c17d5e;
+}
+
+/* ── Summary ── */
+.tem-summary-section {
+  margin-bottom: 1rem;
+}
+
+.tem-summary-section h4 {
+  color: #da9371;
+  font-weight: 600;
+  font-size: 0.98rem;
+  margin-bottom: 0.4rem;
+}
+
+.tem-summary-field {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.92rem;
+}
+
+.tem-summary-field strong {
+  color: #444;
+  min-width: 120px;
+}
+
+/* ── QR section ── */
+.tem-qr-section {
+  margin-top: 0.5rem;
+}
+
+.tem-qr-section .qr-prompt {
+  width: 100%;
+}
+
+/* ── New context input ── */
+.tem-new-context-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tem-new-context-row input {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.92rem;
+}
+
+.tem-new-context-row button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #da9371;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Recording skip btn ── */
+.tem-skip-btn {
+  margin-top: 0.5rem;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.tem-skip-btn:hover {
+  color: #666;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .tem-wizard-card {
+    padding: 1.5rem;
+  }
+
+  .tem-field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .tem-stepper {
+    gap: 0.3rem;
+  }
+
+  .tem-step-line {
+    width: 24px;
+  }
+}

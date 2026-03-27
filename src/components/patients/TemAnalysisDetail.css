@@ -1,0 +1,220 @@
+:root {
+  --primary: #da9371;
+  --primary-dark: #c96a05;
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --info: #3b82f6;
+  --success: #28a745;
+  --error: #dc3545;
+}
+
+/* === BACKDROP === */
+.tem-analysis-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+/* === MODAL === */
+.tem-analysis-modal {
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 1rem;
+  width: 90%;
+  max-width: 550px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  padding: 1.5rem 2rem;
+  animation: slideIn 0.25s ease;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* === HEADER === */
+.tem-analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid var(--info);
+  padding-bottom: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.tem-analysis-header h4 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--info);
+}
+
+.tem-analysis-modal .close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* === ANALYSIS INFO === */
+.tem-analysis-info {
+  background: #f0f7ff;
+  border-left: 4px solid var(--info);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.tem-analysis-info p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+/* === FORM === */
+.tem-override-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tem-override-form label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 0.2rem;
+}
+
+.tem-override-form input[type="number"],
+.tem-override-form textarea {
+  border: 1.8px solid #e5e7eb;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: #fff;
+  transition: all 0.25s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tem-override-form input:focus,
+.tem-override-form textarea:focus {
+  border-color: var(--info);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+.tem-override-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* === SCORE BUTTONS === */
+.score-buttons {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.score-btn {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.6rem;
+  background: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-btn:hover {
+  border-color: var(--info);
+  background: #f0f7ff;
+}
+
+.score-btn.active {
+  border-color: var(--info);
+  background: var(--info);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.score-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  margin-bottom: 0;
+}
+
+/* === BUTTONS === */
+.tem-override-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.tem-override-actions .btn-cancel {
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  color: var(--muted);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tem-override-actions .btn-cancel:hover {
+  background: #f3f4f6;
+}
+
+.tem-override-actions .btn-save {
+  border: none;
+  background: var(--info);
+  color: #fff;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tem-override-actions .btn-save:hover {
+  background: #2563eb;
+}
+
+.tem-override-actions .btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* === SUCCESS MSG === */
+.tem-override-success {
+  background: rgba(40, 167, 69, 0.1);
+  color: var(--success);
+  border-radius: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

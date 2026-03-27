@@ -9,6 +9,10 @@ import PacientePersonalizar from "./PacientePersonalizar";
 import PatientAssignExercise from "./PatientAssignExercise";
 import PacienteVNEST from "./PacienteVNEST";
 import PacienteSR from "./PacienteSR";
+import PacienteTEM from "./PacienteTEM";
+import TemSessionDetail from "./TemSessionDetail";
+import TemAnalysisDetail from "./TemAnalysisDetail";
+import { subscribePatientTEMSessions } from "../../services/temService";
 import "./PacienteDetail.css";
 
 const PacienteDetail = () => {
@@ -22,12 +26,23 @@ const PacienteDetail = () => {
   const [showModal, setShowModal] = useState(false);
   const [showPersonalizeModal, setShowPersonalizeModal] = useState(false);
   const [activeTerapia, setActiveTerapia] = useState("VNEST");
+  const [temSessions, setTemSessions] = useState([]);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [showSessionDetail, setShowSessionDetail] = useState(false);
+  const [overrideData, setOverrideData] = useState(null);
   const [message] = useState("");
 
   // 📄 Cargar ejercicios asignados al paciente
   useEffect(() => {
     if (!pacienteId) return;
     const unsubscribe = getAssignedExercises(pacienteId, setExercises);
+    return () => unsubscribe && unsubscribe();
+  }, [pacienteId]);
+
+  // 🎵 Cargar sesiones TEM del paciente
+  useEffect(() => {
+    if (!pacienteId) return;
+    const unsubscribe = subscribePatientTEMSessions(pacienteId, setTemSessions);
     return () => unsubscribe && unsubscribe();
   }, [pacienteId]);
 
@@ -134,7 +149,7 @@ const PacienteDetail = () => {
 
         {/* --- FILTRO DE TERAPIAS --- */}
         <div className="terapia-tabs mb-4">
-          {["VNEST", "SR"].map((terapia) => (
+          {["VNEST", "SR", "TEM"].map((terapia) => (
             <button
               key={terapia}
               className={`tab-btn ${
@@ -153,10 +168,18 @@ const PacienteDetail = () => {
             exercises={detailedExercises.filter((e) => e.terapia === "VNEST")}
             onView={handleViewExercise}
           />
-        ) : (
+        ) : activeTerapia === "SR" ? (
           <PacienteSR
             exercises={detailedExercises.filter((e) => e.terapia === "SR")}
             onView={handleViewExercise}
+          />
+        ) : (
+          <PacienteTEM
+            sessions={temSessions}
+            onViewSession={(s) => {
+              setSelectedSession(s);
+              setShowSessionDetail(true);
+            }}
           />
         )}
 
@@ -195,6 +218,31 @@ const PacienteDetail = () => {
             onClose={() => {
               setShowSRViewer(false);
               setSelectedExercise(null);
+            }}
+          />
+        )}
+
+        {showSessionDetail && selectedSession && (
+          <TemSessionDetail
+            session={selectedSession}
+            patientId={pacienteId}
+            onClose={() => {
+              setShowSessionDetail(false);
+              setSelectedSession(null);
+            }}
+            onOverride={(data) => setOverrideData(data)}
+          />
+        )}
+
+        {overrideData && (
+          <TemAnalysisDetail
+            data={overrideData}
+            onClose={() => setOverrideData(null)}
+            onSaved={() => {
+              setOverrideData(null);
+              // Refrescar la sesión cerrando y reabriendo
+              setShowSessionDetail(false);
+              setTimeout(() => setShowSessionDetail(true), 100);
             }}
           />
         )}

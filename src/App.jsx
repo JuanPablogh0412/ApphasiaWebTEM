@@ -9,6 +9,8 @@ import SelectExerciseType from "./components/addExercise/SelectExerciseType";
 import AddExerciseIA from "./components/addExercise/AddExerciseIA";
 import PacienteDetail from "./components/patients/PacienteDetail";
 import TerapeutaRegistro from "./components/login/TerapeutaRegistro";
+import AddTEMStimulus from "./components/addExercise/AddTEMStimulus";
+import MobileRecorder from "./components/recording/MobileRecorder";
 
 // 🔹 nuevos componentes del admin
 
@@ -26,6 +28,8 @@ function App() {
       <Route path="/ejercicios" element={<EjerciciosTerapeuta />} />
       <Route path="/ejercicios/nuevo" element={<SelectExerciseType />} />
       <Route path="/ejercicios/nuevo/ia" element={<AddExerciseIA />} />
+      <Route path="/ejercicios/nuevo-tem" element={<AddTEMStimulus />} />
+      <Route path="/grabar/:token" element={<MobileRecorder />} />
 
       {/* === ADMIN === */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />

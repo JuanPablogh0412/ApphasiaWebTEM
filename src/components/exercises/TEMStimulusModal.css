@@ -1,0 +1,154 @@
+:root {
+  --primary: #da9371;
+  --primary-dark: #c96a05;
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --card-bg: #fef9f4;
+  --success: #28a745;
+  --error: #dc3545;
+}
+
+/* === Fondo modal === */
+.tem-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+/* === Contenedor modal === */
+.tem-modal {
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 1rem;
+  width: 90%;
+  max-width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  padding: 1.5rem 2rem;
+  animation: slideIn 0.25s ease;
+  font-family: "Segoe UI", Arial, sans-serif;
+  position: relative;
+}
+
+/* === Header === */
+.tem-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid var(--primary);
+  padding-bottom: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.tem-modal-header h4 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+.tem-modal .close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.tem-modal .close-btn:hover {
+  color: var(--primary-dark);
+}
+
+/* === Info === */
+.tem-modal-info {
+  margin-bottom: 1rem;
+}
+
+.tem-modal-info p {
+  margin: 0.3rem 0;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+/* === Audio === */
+.tem-modal-audio {
+  background: #fff8f0;
+  border-left: 4px solid var(--primary);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tem-modal-audio audio {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+/* === Sílabas === */
+.tem-syllables {
+  margin-bottom: 1rem;
+}
+
+.tem-syllables h5 {
+  color: var(--primary-dark);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+}
+
+.syllable-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.syllable-chip {
+  background: #fff8f0;
+  border: 1px solid #f1e0c5;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* === Metadata grid === */
+.tem-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.tem-meta-grid p {
+  margin: 0.2rem 0;
+  font-size: 0.9rem;
+}
+
+/* === Imagen === */
+.tem-modal-image {
+  margin: 1rem 0;
+}
+
+.tem-modal-image img {
+  max-height: 250px;
+  object-fit: contain;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

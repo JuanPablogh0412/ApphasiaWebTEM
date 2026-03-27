@@ -92,6 +92,9 @@ export async function getVisibleExercises(therapistId, callback) {
 
 export async function getExerciseDetails(id, terapia) {
   try {
+    // TEM no tiene colección de detalles separada (usa stimuli_TEM global)
+    if (terapia === "TEM") return {};
+
     // Determinar la colección según la terapia
     const colName = terapia === "VNEST" ? "ejercicios_VNEST" : "ejercicios_SR";
     const ref = doc(db, colName, id);
@@ -130,6 +133,7 @@ export async function deleteExercise(id, terapia) {
       await deleteDoc(doc(db, "ejercicios_VNEST", id));
     else if (terapia === "SR")
       await deleteDoc(doc(db, "ejercicios_SR", id));
+    // TEM: no hay colección secundaria que borrar
 
   } catch (err) {
   }

@@ -1,0 +1,201 @@
+:root {
+  --primary: #da9371;
+  --primary-dark: #c96a05;
+  --bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text: #1e293b;
+  --muted: #6b7280;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* === CONTENEDOR === */
+.tem-patient-page .tem-sessions-container {
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: var(--text);
+  margin-top: 1.5rem;
+}
+
+/* === FILTROS === */
+.tem-patient-page .filters-box {
+  background: var(--card-bg);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-sm);
+  padding: 1.2rem;
+  margin-bottom: 1.8rem !important;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.tem-patient-page .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 140px;
+}
+
+.tem-patient-page .filter-group label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tem-patient-page .filter-group select {
+  border: 1.8px solid #e5e7eb;
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: #fff;
+  transition: all 0.25s ease;
+}
+
+.tem-patient-page .filter-group select:hover {
+  border-color: var(--primary);
+}
+
+.tem-patient-page .filter-group select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(218, 147, 113, 0.15);
+  outline: none;
+}
+
+/* === TABLA === */
+.tem-patient-page .table-responsive {
+  background: var(--card-bg);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.tem-patient-page .table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  background: var(--card-bg);
+}
+
+.tem-patient-page .table thead {
+  background: #fff8f0;
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.tem-patient-page .table th,
+.tem-patient-page .table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.tem-patient-page .table tbody tr:hover {
+  background: rgba(218, 147, 113, 0.05);
+  cursor: pointer;
+}
+
+/* IDs opacos */
+.tem-patient-page .table td:first-child {
+  color: rgba(0, 0, 0, 0.45);
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* === BADGES === */
+.tem-patient-page .badge {
+  display: inline-block;
+  font-weight: 600;
+  border-radius: 0.6rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.tem-patient-page .badge.bg-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
+.tem-patient-page .badge.bg-warning {
+  background: rgba(255, 193, 7, 0.15);
+  color: var(--warning);
+}
+
+.tem-patient-page .badge.bg-info {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--info);
+}
+
+.tem-patient-page .badge.bg-secondary {
+  background: rgba(107, 114, 128, 0.15);
+  color: var(--muted);
+}
+
+/* === BOTONES === */
+.tem-patient-page .btn-outline-secondary {
+  border: 1.5px solid var(--primary);
+  color: var(--primary-dark);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  background: transparent;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-size: 0.85rem;
+}
+
+.tem-patient-page .btn-outline-secondary:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* === PAGINACIÓN === */
+.tem-patient-page .pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.2rem;
+  gap: 0.4rem;
+}
+
+.tem-patient-page .pagination-wrapper button {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tem-patient-page .pagination-wrapper button.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.tem-patient-page .pagination-wrapper button:hover:not(.active) {
+  background: #f0f0f0;
+}
+
+.tem-patient-page .pagination-wrapper button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* === EMPTY STATE === */
+.tem-patient-page .empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--muted);
+}
+
+.tem-patient-page .empty-state .icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}

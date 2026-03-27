@@ -6,6 +6,7 @@ import {
   subscribeAssignedPatients,
   subscribePendingVisibleExercises,
 } from "../../services/therapistService";
+import { subscribeTEMPendingSessions } from "../../services/temService";
 import "./DashboardTerapeuta.css";
 
 const DashboardTerapeuta = () => {
@@ -13,6 +14,7 @@ const DashboardTerapeuta = () => {
   const [terapeuta, setTerapeuta] = useState(null);
   const [numPacientes, setNumPacientes] = useState(0);
   const [numPendientes, setNumPendientes] = useState(0);
+  const [numTEMPendientes, setNumTEMPendientes] = useState(0);
 
   useEffect(() => {
   const uid = localStorage.getItem("terapeutaUID");
@@ -26,6 +28,7 @@ const DashboardTerapeuta = () => {
 
   // 🔹 Suscripciones en tiempo real
   let unsubEjercicios;
+  let unsubTEM;
   const unsubPacientes = subscribeAssignedPatients(uid, setNumPacientes);
 
   async function subscribeEjercicios() {
@@ -33,9 +36,15 @@ const DashboardTerapeuta = () => {
   }
   subscribeEjercicios();
 
+  async function subscribeTEM() {
+    unsubTEM = await subscribeTEMPendingSessions(uid, setNumTEMPendientes);
+  }
+  subscribeTEM();
+
   return () => {
     unsubPacientes && unsubPacientes();
     unsubEjercicios && unsubEjercicios();
+    unsubTEM && unsubTEM();
   };
 }, [navigate]);
 
@@ -85,6 +94,25 @@ const DashboardTerapeuta = () => {
                 <img
                   src="https://cdn-icons-png.flaticon.com/512/2972/2972338.png"
                   alt="Ejercicios"
+                  className="dashboard-icon"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* --- SESIONES TEM --- */}
+          <div className="dashboard-card hoverable">
+            <div className="card-content">
+              <div>
+                <p className="label">Sesiones TEM completadas</p>
+                <h1 className="clickable-number" onClick={() => navigate("/pacientes")}>
+                  {numTEMPendientes}
+                </h1>
+              </div>
+              <div className="icon-wrapper green">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/3997/3997872.png"
+                  alt="TEM"
                   className="dashboard-icon"
                 />
               </div>
