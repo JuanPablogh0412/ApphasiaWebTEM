@@ -11,28 +11,44 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
-import { authAdmin } from "./adminService";
+import emailjs from "@emailjs/browser";
+
+function requireAuth() {
+  if (!auth.currentUser) throw new Error("No autenticado");
+}
 
 
 /**
- * 🔹 Login unificado: intenta como admin primero, luego como terapeuta
+ * 🔹 Login unificado: autentica con Firebase Auth y determina rol por custom claims
  */
 
 export async function loginUnified(email, password) {
-  // 1) Revisar si es admin
-  const esAdmin = await authAdmin(email, password);
-  if (esAdmin) {
-    return { tipo: "admin" };
+  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
+
+  // Leer custom claims del token
+  const tokenResult = await user.getIdTokenResult();
+  const role = tokenResult.claims.role;
+
+  if (role === "admin") {
+    return { tipo: "admin", user };
   }
 
-  // 2) Si no es admin, intentar login como terapeuta
-  const result = await loginTherapist(email, password);
-
-  if (result.success) {
-    return { tipo: "terapeuta", user: result.user, data: result.data };
+  if (role === "terapeuta") {
+    const ref = doc(db, "terapeutas", user.uid);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    return { tipo: "terapeuta", user, data };
   }
 
-  // 3) Si falla: no existe
+  if (role === "creador") {
+    const ref = doc(db, "creadores", user.uid);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    return { tipo: "creador", user, data };
+  }
+
+  // Usuario autenticado pero sin rol asignado
   return { tipo: "ninguno" };
 }
 
@@ -65,6 +81,7 @@ export async function loginUnified(email, password) {
  * 🔹 Obtener información del terapeuta por UID
  */
 export async function getTherapistData(therapistId) {
+  requireAuth();
   try {
     const ref = doc(db, "terapeutas", therapistId);
     const snap = await getDoc(ref);
@@ -75,9 +92,36 @@ export async function getTherapistData(therapistId) {
 }
 
 /**
+ * 🔹 Obtener nombre de un usuario por UID (busca en terapeutas y creadores)
+ */
+export async function getUserDisplayInfo(uid) {
+  requireAuth();
+  try {
+    // Buscar en terapeutas
+    const tRef = doc(db, "terapeutas", uid);
+    const tSnap = await getDoc(tRef);
+    if (tSnap.exists()) {
+      const d = tSnap.data();
+      return { nombre: d.nombre || d.email || uid, role: "terapeuta", ...d, id: tSnap.id };
+    }
+    // Buscar en creadores
+    const cRef = doc(db, "creadores", uid);
+    const cSnap = await getDoc(cRef);
+    if (cSnap.exists()) {
+      const d = cSnap.data();
+      return { nombre: d.nombre || d.email || uid, role: "creador", ...d, id: cSnap.id };
+    }
+    return { nombre: uid, role: "desconocido", id: uid };
+  } catch {
+    return { nombre: uid, role: "desconocido", id: uid };
+  }
+}
+
+/**
  * 🔹 Obtener pacientes asignados a un terapeuta
  */
 export function getPatientsByTherapist(therapistId, callback) {
+  requireAuth();
   const ref = collection(db, "pacientes");
   const q = query(ref, where("terapeuta", "==", therapistId)); // 👈 ahora UID
 
@@ -107,6 +151,7 @@ export function getPatientsByTherapist(therapistId, callback) {
  * 🔹 Suscribe al conteo de ejercicios no revisados (global)
  */
 export function subscribePendingExercises(callback) {
+  requireAuth();
   const ejerciciosRef = collection(db, "ejercicios");
   const q = query(ejerciciosRef, where("revisado", "==", false));
   const unsubscribe = onSnapshot(q, (snap) => {
@@ -119,6 +164,7 @@ export function subscribePendingExercises(callback) {
  * 🔹 Suscribe al conteo de ejercicios visibles y no revisados del terapeuta
  */
 export async function subscribePendingVisibleExercises(therapistId, callback) {
+  requireAuth();
   // 1️⃣ Obtener IDs (UIDs) de los pacientes del terapeuta
   const pacientesRef = collection(db, "pacientes");
   const pacientesQuery = query(pacientesRef, where("terapeuta", "==", therapistId));
@@ -150,6 +196,7 @@ export async function subscribePendingVisibleExercises(therapistId, callback) {
  * 🔹 Suscribe al conteo de pacientes asignados (desde el documento del terapeuta)
  */
 export function subscribeAssignedPatients(therapistId, callback) {
+  requireAuth();
   const ref = doc(db, "terapeutas", therapistId); // 👈 UID
   const unsubscribe = onSnapshot(ref, (snap) => {
     if (snap.exists()) {
@@ -187,6 +234,33 @@ export const sendTherapistRequest = async (data) => {
     estado: "pendiente",
     fecha: serverTimestamp(),
   });
+
+  // Notificar al admin por correo (fallo silencioso si EmailJS no está configurado)
+  try {
+    const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_SOLICITUD;
+
+    if (publicKey && serviceId && templateId &&
+        !publicKey.startsWith("TU_") && !serviceId.startsWith("TU_")) {
+      await emailjs.send(
+        serviceId,
+        templateId,
+        {
+          nombre: data.nombre,
+          email_solicitante: data.email,
+          profesion: data.profesion,
+          celular: data.celular || "—",
+          motivacion: data.motivacion || "—",
+          dashboard_url: "https://apphasia.me/admin/dashboard",
+        },
+        publicKey
+      );
+    }
+  } catch (e) {
+    // El fallo del email no debe bloquear el registro
+    console.warn("No se pudo enviar notificación al admin:", e);
+  }
 };
 
 /**
@@ -195,7 +269,7 @@ export const sendTherapistRequest = async (data) => {
 export async function resetTherapistPassword(email) {
   try {
     await sendPasswordResetEmail(auth, email, {
-      url: "https://afasia.virtual.uniandes.edu.co/web",
+      url: "https://apphasia.me",
       handleCodeInApp: true,
     });
     return { success: true };

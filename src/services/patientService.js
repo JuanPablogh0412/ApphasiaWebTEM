@@ -11,11 +11,15 @@ import {
   where,
   query,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { auth, db } from "./firebase";
 
+function requireAuth() {
+  if (!auth.currentUser) throw new Error("No autenticado");
+}
 
 
 export async function getPatientById(patientId) {
+  requireAuth();
   try {
     const ref = doc(db, "pacientes", patientId);
     const snap = await getDoc(ref);
@@ -27,6 +31,7 @@ export async function getPatientById(patientId) {
 }
 
 export async function getPatientByEmail(email) {
+  requireAuth();
   try {
     const pacientesRef = collection(db, "pacientes");
     const q = query(pacientesRef, where("email", "==", email));
@@ -39,6 +44,7 @@ export async function getPatientByEmail(email) {
 }
 
 export async function updatePatient(patientId, data) {
+  requireAuth();
   try {
     const ref = doc(db, "pacientes", patientId);
     await updateDoc(ref, data);
@@ -48,6 +54,7 @@ export async function updatePatient(patientId, data) {
 }
 
 export async function assignPatientToTherapist(patientId, therapistId) {
+  requireAuth();
   try {
     const ref = doc(db, "pacientes", patientId);
     await updateDoc(ref, { terapeuta: therapistId });
@@ -60,6 +67,7 @@ export async function assignPatientToTherapist(patientId, therapistId) {
 }
 
 export async function assignExerciseToPatient(patientId, exerciseId) {
+  requireAuth();
   try {
     // 1️⃣ Obtener el ejercicio base
     const exerciseRef = doc(db, "ejercicios", exerciseId);
@@ -125,6 +133,7 @@ export async function assignExerciseToPatient(patientId, exerciseId) {
 
 
 export function getAssignedExercises(patientId, callback) {
+  requireAuth();
   const ref = collection(db, "pacientes", patientId, "ejercicios_asignados");
 
   const unsubscribe = onSnapshot(ref, (snapshot) => {

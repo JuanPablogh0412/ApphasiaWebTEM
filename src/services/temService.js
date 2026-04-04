@@ -325,6 +325,23 @@ async function countPendingTEMSessions(patientIds) {
  * @param {File|null} imagenFile - Archivo de imagen (opcional)
  * @returns {string} docId
  */
+/**
+ * Verifica si ya existe un estímulo con el mismo texto y nivel clínico.
+ * Devuelve el array de documentos duplicados (vacío si no hay).
+ */
+export async function checkTEMStimulusDuplicate(texto, nivel) {
+  const textoNorm = texto.trim().toLowerCase();
+  const snap = await getDocs(
+    query(
+      collection(db, "stimuli_TEM"),
+      where("nivel_clinico", "==", Number(nivel))
+    )
+  );
+  return snap.docs.filter(
+    (d) => d.data().texto?.trim().toLowerCase() === textoNorm
+  );
+}
+
 export async function createTEMStimulus(data, imagenFile = null) {
   const docId = `ST_TEM_N${data.nivel_clinico}_${Date.now()}`;
   let imagen_url = data.imagen_url || "";
@@ -354,8 +371,67 @@ export async function createTEMStimulus(data, imagenFile = null) {
     video_url: data.video_url || "",
     creado_por: data.creado_por || "",
     fecha_creacion: new Date().toISOString(),
+    estado: data.estado || "aprobado",
   };
 
   await setDoc(doc(db, "stimuli_TEM", docId), docData);
   return docId;
+}
+
+// ════════════════════════════════════════════
+//  SUSCRIPCIONES FILTRADAS POR ESTADO
+// ════════════════════════════════════════════
+
+/** Solo estímulos aprobados (para terapia y catálogo visible) */
+export function subscribeTEMStimuliApproved(callback) {
+  const colRef = collection(db, "stimuli_TEM");
+  const q = query(colRef, where("estado", "==", "aprobado"));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => (a.texto || "").localeCompare(b.texto || ""));
+      callback(data);
+    },
+    (error) => {
+      console.error("[TEM] Error subscribing to approved stimuli:", error.message);
+      callback([]);
+    }
+  );
+}
+
+/** Estímulos pendientes de revisión (para admin) */
+export function subscribeTEMStimuliPending(callback) {
+  const colRef = collection(db, "stimuli_TEM");
+  const q = query(colRef, where("estado", "==", "pendiente_revision"));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => (a.fecha_creacion || "").localeCompare(b.fecha_creacion || ""));
+      callback(data);
+    },
+    (error) => {
+      console.error("[TEM] Error subscribing to pending stimuli:", error.message);
+      callback([]);
+    }
+  );
+}
+
+/** Estímulos creados por un usuario específico (para dashboard del creador) */
+export function subscribeTEMStimuliByCreator(creadorUid, callback) {
+  const colRef = collection(db, "stimuli_TEM");
+  const q = query(colRef, where("creado_por", "==", creadorUid));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => (b.fecha_creacion || "").localeCompare(a.fecha_creacion || ""));
+      callback(data);
+    },
+    (error) => {
+      console.error("[TEM] Error subscribing to creator stimuli:", error.message);
+      callback([]);
+    }
+  );
 }

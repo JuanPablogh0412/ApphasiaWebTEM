@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../common/Navbar";
 import { getPatientsByTherapist } from "../../services/therapistService";
 import AddPatient from "../addPatient/AddPatient";
+import { useAuth } from "../../context/AuthContext";
 import "./PacientesTerapeuta.css";
-import { auth } from "../../services/firebase";
 
 const PacientesTerapeuta = () => {
   const navigate = useNavigate();
-  const [terapeutaId, setTerapeutaId] = useState(null); // 👈 UID en vez de email
+  const { user } = useAuth();
+  const terapeutaId = user?.uid || null;
   const [pacientes, setPacientes] = useState([]);
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -18,22 +19,10 @@ const PacientesTerapeuta = () => {
   const perPage = 10;
 
   useEffect(() => {
-    // Espera que FirebaseAuth esté listo
-    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (!user) {
-        navigate("/");
-        return;
-      }
-
-      setTerapeutaId(user.uid); // 👈 ahora trabajamos con el UID del terapeuta
-
-      // 🔹 Escucha pacientes del terapeuta (por UID)
-      const unsubscribePatients = getPatientsByTherapist(user.uid, setPacientes);
-      return () => unsubscribePatients && unsubscribePatients();
-    });
-
-    return () => unsubscribeAuth();
-  }, [navigate]);
+    if (!terapeutaId) return;
+    const unsubscribe = getPatientsByTherapist(terapeutaId, setPacientes);
+    return () => unsubscribe && unsubscribe();
+  }, [terapeutaId]);
 
   const filteredPatients = pacientes.filter((p) =>
     p.email?.toLowerCase().includes(search.toLowerCase())

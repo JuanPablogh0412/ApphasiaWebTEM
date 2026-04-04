@@ -226,6 +226,38 @@
   color: #8a6d3b;
 }
 
+/* Mensajes de duplicado */
+.tem-duplicate-checking {
+  margin-top: 1rem;
+  padding: 0.7rem 1rem;
+  background: #e8f0fe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 0.4rem;
+  color: #1e40af;
+  font-size: 0.9rem;
+}
+
+.tem-duplicate-error {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: #fef2f2;
+  border-left: 4px solid #dc2626;
+  border-radius: 0.4rem;
+  color: #991b1b;
+  font-size: 0.9rem;
+}
+
+.tem-duplicate-error strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 1rem;
+}
+
+.tem-duplicate-error p {
+  margin: 0;
+  line-height: 1.4;
+}
+
 /* ── Navigation buttons ── */
 .tem-wizard-nav {
   display: flex;
@@ -306,9 +338,32 @@
   font-size: 0.92rem;
 }
 
+.tem-image-upload-area.tem-field-required {
+  border-color: #dc3545;
+  background: #fff5f5;
+}
+
 .tem-image-upload-area:hover {
   border-color: #da9371;
   color: #c17d5e;
+}
+
+/* Campos obligatorios */
+.tem-required {
+  color: #dc3545;
+  margin-left: 0.2rem;
+}
+
+.tem-field-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #dc3545;
+}
+
+.tem-input-required {
+  border-color: #dc3545 !important;
+  background: #fff5f5 !important;
 }
 
 /* ── Summary ── */

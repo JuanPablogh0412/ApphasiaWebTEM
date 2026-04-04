@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUnified, resetTherapistPassword } from "../../services/therapistService";
+import { useAuth } from "../../context/AuthContext";
 import Footer from "../common/Footer";
 import "./TerapeutaLogin.css";
 
 const TerapeutaLogin = () => {
   const navigate = useNavigate();
+  const { refreshClaims } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,21 +24,22 @@ const TerapeutaLogin = () => {
     try {
       const result = await loginUnified(email, password);
 
+      // Refrescar claims en el AuthContext
+      await refreshClaims();
+
       if (result.tipo === "admin") return navigate("/admin/dashboard");
 
       if (result.tipo === "terapeuta") {
-        localStorage.setItem("terapeutaEmail", email);
-        localStorage.setItem("terapeutaUID", result.user.uid);
-
-        if (result.data)
-          localStorage.setItem("terapeutaData", JSON.stringify(result.data));
-
         return navigate("/dashboard");
       }
 
-      setError("Tus credenciales son incorrectas.");
+      if (result.tipo === "creador") {
+        return navigate("/creador/dashboard");
+      }
+
+      setError("Tu cuenta no tiene un rol asignado. Contacta al administrador.");
     } catch (err) {
-      setError("Error al iniciar sesión. Intenta nuevamente.",err);
+      setError("Error al iniciar sesión. Verifica tus credenciales.");
     } finally {
       setLoading(false);
     }
@@ -145,7 +148,17 @@ const TerapeutaLogin = () => {
                   className="forgot-link fw-semibold"
                   onClick={() => navigate("/registro")}
                 >
-                  Regístrate aquí
+                  Regístrate como terapeuta
+                </button>
+              </p>
+              <p className="small text-muted text-center mt-1">
+                ¿Quieres crear estímulos?{" "}
+                <button
+                  type="button"
+                  className="forgot-link fw-semibold"
+                  onClick={() => navigate("/registro-creador")}
+                >
+                  Registro de creador
                 </button>
               </p>
             </form>

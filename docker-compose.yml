@@ -1,0 +1,19 @@
+# ============================================================
+# Docker Compose — RehabilitIA Web (Producción)
+# Reemplaza TU_USUARIO_DOCKER con tu usuario real de Docker Hub
+# Ejemplo: juanpablogh0412/rehabilitia
+# ============================================================
+
+services:
+  rehabilitia-web:
+    image: TU_USUARIO_DOCKER/rehabilitia:latest
+    container_name: rehabilitia-web
+    restart: always          # se reinicia automáticamente al arrancar la VM
+    ports:
+      - "80:80"              # HTTP (nginx escucha en 80 dentro del contenedor)
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

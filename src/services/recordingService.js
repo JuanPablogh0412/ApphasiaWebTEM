@@ -27,7 +27,7 @@ function generateToken() {
 /**
  * Crea una sesión de grabación pendiente en Firestore.
  *
- * @param {"audio"|"video"} type - Tipo de grabación
+ * @param {"audio"|"video"|"video_audio"} type - Tipo de grabación
  * @param {string} therapistId - UID del terapeuta que la solicita
  * @param {object} [metadata] - Info contextual (stimulusText, nivel, etc.)
  * @returns {Promise<string>} El token de la sesión
@@ -103,6 +103,43 @@ export async function uploadAndCompleteRecording(token, file, extension) {
   });
 
   return gsUrl;
+}
+
+/**
+ * Sube dos archivos (audio + video) de una grabación dual y marca la sesión como completada.
+ * El audio y el video provienen del mismo stream pero se graban por separado.
+ *
+ * @param {string} token
+ * @param {Blob} audioBlob - Audio extraído (sin video)
+ * @param {Blob} videoBlob - Video sin audio
+ * @param {string} extension
+ * @returns {Promise<{audioGsUrl: string, videoGsUrl: string}>}
+ */
+export async function uploadAndCompleteDualRecording(token, audioBlob, videoBlob, extension) {
+  const audioFileName = `${token}_audio.${extension}`;
+  const videoFileName = `${token}_video.${extension}`;
+
+  const audioRef = ref(storage, `tem_recordings/${audioFileName}`);
+  const videoRef = ref(storage, `tem_recordings/${videoFileName}`);
+
+  await Promise.all([
+    uploadBytes(audioRef, audioBlob),
+    uploadBytes(videoRef, videoBlob),
+  ]);
+
+  const audioGsUrl = `gs://${audioRef.bucket}/${audioRef.fullPath}`;
+  const videoGsUrl = `gs://${videoRef.bucket}/${videoRef.fullPath}`;
+
+  const docRef = doc(db, RECORDINGS_COL, token);
+  await updateDoc(docRef, {
+    status: "completed",
+    storageUrl: videoGsUrl,       // compatibilidad con campo existente
+    audioStorageUrl: audioGsUrl,
+    videoStorageUrl: videoGsUrl,
+    fileName: videoFileName,
+  });
+
+  return { audioGsUrl, videoGsUrl };
 }
 
 /**

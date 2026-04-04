@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../common/Navbar";
+import { useAuth } from "../../context/AuthContext";
 import {
   getTherapistData,
   subscribeAssignedPatients,
@@ -11,17 +12,15 @@ import "./DashboardTerapeuta.css";
 
 const DashboardTerapeuta = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [terapeuta, setTerapeuta] = useState(null);
   const [numPacientes, setNumPacientes] = useState(0);
   const [numPendientes, setNumPendientes] = useState(0);
   const [numTEMPendientes, setNumTEMPendientes] = useState(0);
 
   useEffect(() => {
-  const uid = localStorage.getItem("terapeutaUID");
-  if (!uid) {
-    navigate("/");
-    return;
-  }
+  const uid = user?.uid;
+  if (!uid) return;
 
   // 🔹 Cargar datos del terapeuta
   getTherapistData(uid).then((data) => setTerapeuta(data));
@@ -46,7 +45,7 @@ const DashboardTerapeuta = () => {
     unsubEjercicios && unsubEjercicios();
     unsubTEM && unsubTEM();
   };
-}, [navigate]);
+}, [user]);
 
 
   return (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../common/Navbar";
 import { getAssignedExercises, getPatientById } from "../../services/patientService";
 import { getExerciseDetails, getExerciseById } from "../../services/exercisesService";
@@ -13,10 +13,13 @@ import PacienteTEM from "./PacienteTEM";
 import TemSessionDetail from "./TemSessionDetail";
 import TemAnalysisDetail from "./TemAnalysisDetail";
 import { subscribePatientTEMSessions } from "../../services/temService";
+import { useAuth } from "../../context/AuthContext";
 import "./PacienteDetail.css";
 
 const PacienteDetail = () => {
   const { pacienteId } = useParams();
+  const navigate = useNavigate();
+  const { user, role } = useAuth();
   const [patientInfo, setPatientInfo] = useState(null);
   const [exercises, setExercises] = useState([]);
   const [detailedExercises, setDetailedExercises] = useState([]);
@@ -46,20 +49,29 @@ const PacienteDetail = () => {
     return () => unsubscribe && unsubscribe();
   }, [pacienteId]);
 
-  //cargar info del paciente
+  //cargar info del paciente + verificar ownership
   useEffect(() => {
     const loadPatientInfo = async () => {
-      if (!pacienteId) return;
+      if (!pacienteId || !user) return;
 
       try {
-        const patientInfo = await getPatientById(pacienteId);
-        setPatientInfo(patientInfo);
+        const info = await getPatientById(pacienteId);
+        if (!info) { navigate("/pacientes"); return; }
+
+        // Ownership check: solo el terapeuta asignado o admin
+        if (role === "terapeuta" && info.terapeuta !== user.uid) {
+          navigate("/pacientes");
+          return;
+        }
+
+        setPatientInfo(info);
       } catch (error) {
+        navigate("/pacientes");
       }
     };
 
     loadPatientInfo();
-  }, [pacienteId]);
+  }, [pacienteId, user, role, navigate]);
 
   // 🔍 Cargar detalles de cada ejercicio
   useEffect(() => {

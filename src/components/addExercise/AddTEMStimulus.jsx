@@ -1,4 +1,4 @@
-// AddTEMStimulus.jsx — Wizard de 5 pasos para crear un estímulo TEM.
+// AddTEMStimulus.jsx — Wizard de 4 pasos para crear un estímulo TEM.
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../common/Navbar";
@@ -9,23 +9,24 @@ import { generateTonalPattern } from "../../utils/tonalPattern";
 import { validateStimulus } from "../../utils/temRubricValidator";
 import { generateTimings, getAudioDurationMs } from "../../utils/audioTimings";
 
-import { createTEMStimulus, getTEMStorageUrl } from "../../services/temService";
+import { createTEMStimulus, checkTEMStimulusDuplicate, getTEMStorageUrl } from "../../services/temService";
 import { getAllContexts, createContext } from "../../services/contextService";
 import { getRecordingDownloadUrl } from "../../services/recordingService";
 import { auth } from "../../services/firebase";
+import { useAuth } from "../../context/AuthContext";
 
 import "./AddTEMStimulus.css";
 
 const STEPS = [
   "Texto y nivel",
-  "Audio",
-  "Video",
+  "Grabación",
   "Imagen y contexto",
   "Resumen",
 ];
 
 export default function AddTEMStimulus() {
   const navigate = useNavigate();
+  const { role } = useAuth();
   const [step, setStep] = useState(0);
   const [therapistId, setTherapistId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -37,17 +38,17 @@ export default function AddTEMStimulus() {
   const [tonalPattern, setTonalPattern] = useState("");
   const [validation, setValidation] = useState(null);
 
-  // ── Step 2 state (audio) ──
+  // Duplicate detection
+  const [duplicateWarning, setDuplicateWarning] = useState(null); // null | "checking" | { found: true, texto } | { found: false }
+
+  // ── Step 2 state (grabación dual: audio + video) ──
   const [audioGsUrl, setAudioGsUrl] = useState("");
   const [audioDurationMs, setAudioDurationMs] = useState(0);
   const [timings, setTimings] = useState({ onsets_ms: [], durations_ms: [] });
-  const [showAudioQR, setShowAudioQR] = useState(false);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState(null);
-
-  // ── Step 3 state (video) ──
   const [videoGsUrl, setVideoGsUrl] = useState("");
-  const [showVideoQR, setShowVideoQR] = useState(false);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
+  const [showRecordingQR, setShowRecordingQR] = useState(false);
 
   // ── Step 4 state (imagen + contexto) ──
   const [imagenFile, setImagenFile] = useState(null);
@@ -105,12 +106,14 @@ export default function AddTEMStimulus() {
   const handleTextoChange = (e) => {
     const v = e.target.value;
     setTexto(v);
+    setDuplicateWarning(null);
     recalculate(v, nivel);
   };
 
   const handleNivelChange = (e) => {
     const n = Number(e.target.value);
     setNivel(n);
+    setDuplicateWarning(null);
     recalculate(texto, n);
   };
 
@@ -130,17 +133,24 @@ export default function AddTEMStimulus() {
   };
 
   // ────────────────────────────────────────
-  // Step 2 helpers (audio)
+  // Step 2 helpers (grabación dual)
   // ────────────────────────────────────────
-  const handleAudioComplete = useCallback(
-    async (storageUrl) => {
-      setAudioGsUrl(storageUrl);
-      setShowAudioQR(false);
+  const handleRecordingComplete = useCallback(
+    async ({ audioStorageUrl, videoStorageUrl }) => {
+      setAudioGsUrl(audioStorageUrl);
+      setVideoGsUrl(videoStorageUrl);
+      setShowRecordingQR(false);
 
       try {
-        const httpUrl = await getRecordingDownloadUrl(storageUrl);
-        setAudioPreviewUrl(httpUrl);
-        const resp = await fetch(httpUrl);
+        const [audioHttpUrl, videoHttpUrl] = await Promise.all([
+          getRecordingDownloadUrl(audioStorageUrl),
+          getRecordingDownloadUrl(videoStorageUrl),
+        ]);
+        setAudioPreviewUrl(audioHttpUrl);
+        setVideoPreviewUrl(videoHttpUrl);
+
+        // Compute duration + timings from audio
+        const resp = await fetch(audioHttpUrl);
         const blob = await resp.blob();
         const file = new File([blob], "audio.webm", { type: blob.type });
         const dur = await getAudioDurationMs(file);
@@ -153,20 +163,6 @@ export default function AddTEMStimulus() {
     },
     [syllables]
   );
-
-  // ────────────────────────────────────────
-  // Step 3 helpers (video)
-  // ────────────────────────────────────────
-  const handleVideoComplete = useCallback(async (storageUrl) => {
-    setVideoGsUrl(storageUrl);
-    setShowVideoQR(false);
-    try {
-      const httpUrl = await getRecordingDownloadUrl(storageUrl);
-      setVideoPreviewUrl(httpUrl);
-    } catch {
-      // preview not critical
-    }
-  }, []);
 
   // ────────────────────────────────────────
   // Step 4 helpers (imagen + contexto)
@@ -225,10 +221,11 @@ export default function AddTEMStimulus() {
           durations_ms: timings.durations_ms,
           video_url: videoGsUrl,
           creado_por: therapistId,
+          estado: role === "creador" ? "pendiente_revision" : "aprobado",
         },
         imagenFile
       );
-      navigate("/ejercicios");
+      navigate(role === "creador" ? "/creador/dashboard" : "/ejercicios");
     } catch (err) {
       alert("Error al guardar el estímulo: " + err.message);
     } finally {
@@ -240,14 +237,34 @@ export default function AddTEMStimulus() {
   // Navigation
   // ────────────────────────────────────────
   const canNext = () => {
-    if (step === 0) return texto.trim().length > 0 && validation?.valid;
-    if (step === 1) return !!audioGsUrl;
-    if (step === 2) return !!videoGsUrl;
+    if (step === 0) return texto.trim().length > 0 && validation?.valid && duplicateWarning?.found !== true;
+    if (step === 1) return !!audioGsUrl && !!videoGsUrl;
+    if (step === 2) return !!imagenFile && pregunta.trim().length > 0 && !!categoria;
     return true;
   };
 
-  const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  const goBack = () => setStep((s) => Math.max(s - 1, 0));
+  const goNext = async () => {
+    // En paso 0, verificar duplicados antes de avanzar
+    if (step === 0) {
+      setDuplicateWarning("checking");
+      try {
+        const dupes = await checkTEMStimulusDuplicate(texto, nivel);
+        if (dupes.length > 0) {
+          setDuplicateWarning({ found: true, texto: texto.trim() });
+          return; // No avanza
+        }
+        setDuplicateWarning({ found: false });
+      } catch {
+        setDuplicateWarning({ found: false }); // Si falla la consulta, dejar pasar
+      }
+    }
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  };
+
+  const goBack = () => {
+    if (step === 0) setDuplicateWarning(null);
+    setStep((s) => Math.max(s - 1, 0));
+  };
 
   // ────────────────────────────────────────
   // Render helpers
@@ -360,22 +377,40 @@ export default function AddTEMStimulus() {
           )}
         </div>
       )}
+
+      {/* Aviso de duplicado */}
+      {duplicateWarning === "checking" && (
+        <div className="tem-duplicate-checking">
+          🔍 Verificando si el estímulo ya existe…
+        </div>
+      )}
+      {duplicateWarning?.found === true && (
+        <div className="tem-duplicate-error">
+          <strong>⛔ Estímulo duplicado</strong>
+          <p>
+            Ya existe un estímulo de <strong>Nivel {nivel}</strong> con el texto{" "}
+            <em>«{duplicateWarning.texto}»</em> en la base de datos. No se pueden
+            crear estímulos duplicados. Modifica el texto o cambia el nivel.
+          </p>
+        </div>
+      )}
     </>
   );
 
-  // ── Step 2 ──
+  // ── Step 2: Grabación unificada (audio + video) ──
   const renderStep2 = () => (
     <>
-      <h3>2. Grabación de audio</h3>
+      <h3>2. Grabación de video y audio</h3>
       <p style={{ color: "#666", fontSize: "0.92rem" }}>
-        Escanea el código QR con tu celular para grabar el audio del estímulo.
-        El audio se usa para generar los tiempos de cada sílaba.
+        Escanea el código QR con tu celular para grabar <strong>simultáneamente</strong> el
+        audio y el video del estímulo. Se generarán dos archivos separados (audio puro y video
+        sin sonido) de forma automática.
       </p>
 
-      {audioGsUrl && !showAudioQR ? (
+      {audioGsUrl && videoGsUrl && !showRecordingQR ? (
         <div>
           <div className="tem-validation-panel valid">
-            <strong>✅ Audio grabado correctamente</strong>
+            <strong>✅ Audio y video grabados correctamente</strong>
             {audioDurationMs > 0 && (
               <p style={{ margin: "0.3rem 0 0" }}>
                 Duración: {(audioDurationMs / 1000).toFixed(1)}s — Timings
@@ -383,13 +418,36 @@ export default function AddTEMStimulus() {
               </p>
             )}
           </div>
+
+          {audioPreviewUrl && (
+            <div style={{ marginTop: "0.6rem" }}>
+              <strong style={{ fontSize: "0.88rem" }}>🎤 Audio:</strong>
+              <audio src={audioPreviewUrl} controls style={{ width: "100%", marginTop: "0.3rem" }} />
+            </div>
+          )}
+          {videoPreviewUrl && (
+            <div style={{ marginTop: "0.6rem" }}>
+              <strong style={{ fontSize: "0.88rem" }}>📹 Video (sin sonido):</strong>
+              <video
+                src={videoPreviewUrl}
+                controls
+                playsInline
+                muted
+                style={{ maxWidth: "100%", borderRadius: "0.5rem", marginTop: "0.3rem" }}
+              />
+            </div>
+          )}
+
           <button
             className="tem-skip-btn"
             onClick={() => {
               setAudioGsUrl("");
+              setVideoGsUrl("");
               setAudioDurationMs(0);
               setTimings({ onsets_ms: [], durations_ms: [] });
-              setShowAudioQR(true);
+              setAudioPreviewUrl(null);
+              setVideoPreviewUrl(null);
+              setShowRecordingQR(true);
             }}
           >
             Volver a grabar
@@ -397,21 +455,21 @@ export default function AddTEMStimulus() {
         </div>
       ) : (
         <div className="tem-qr-section">
-          {!showAudioQR && (
+          {!showRecordingQR && (
             <button
               className="tem-btn tem-btn-next"
-              onClick={() => setShowAudioQR(true)}
+              onClick={() => setShowRecordingQR(true)}
             >
-              Iniciar grabación de audio
+              Iniciar grabación
             </button>
           )}
-          {showAudioQR && therapistId && (
+          {showRecordingQR && therapistId && (
             <QRRecordPrompt
-              type="audio"
+              type="video_audio"
               therapistId={therapistId}
               stimulusText={texto}
-              onComplete={handleAudioComplete}
-              onCancel={() => setShowAudioQR(false)}
+              onComplete={handleRecordingComplete}
+              onCancel={() => setShowRecordingQR(false)}
             />
           )}
         </div>
@@ -422,78 +480,12 @@ export default function AddTEMStimulus() {
   // ── Step 3 ──
   const renderStep3 = () => (
     <>
-      <h3>3. Grabación de video (labios)</h3>
-      <p style={{ color: "#666", fontSize: "0.92rem" }}>
-        Escanea el código QR para grabar un video de los labios pronunciando el
-        estímulo. El video se guardará <strong>sin sonido</strong> y se sincronizará
-        con el audio ya grabado.
-      </p>
-
-      {audioPreviewUrl && (
-        <div style={{ marginBottom: "1rem", padding: "0.75rem", background: "#fffaf5", borderRadius: "0.6rem", border: "1px solid rgba(218,147,113,0.3)" }}>
-          <p style={{ fontWeight: 600, fontSize: "0.88rem", color: "#c17d5e", margin: "0 0 0.4rem" }}>
-            🎤 Audio de referencia — escucha para sincronizar el video:
-          </p>
-          <audio src={audioPreviewUrl} controls style={{ width: "100%" }} />
-        </div>
-      )}
-
-      {videoGsUrl && !showVideoQR ? (
-        <div>
-          <div className="tem-validation-panel valid">
-            <strong>✅ Video grabado correctamente</strong>
-          </div>
-          {videoPreviewUrl && (
-            <video
-              src={videoPreviewUrl}
-              controls
-              playsInline
-              muted
-              style={{ marginTop: "0.6rem", maxWidth: "100%", borderRadius: "0.5rem" }}
-            />
-          )}
-          <button
-            className="tem-skip-btn"
-            onClick={() => {
-              setVideoGsUrl("");
-              setVideoPreviewUrl(null);
-              setShowVideoQR(true);
-            }}
-          >
-            Volver a grabar
-          </button>
-        </div>
-      ) : (
-        <div className="tem-qr-section">
-          {!showVideoQR && (
-            <button
-              className="tem-btn tem-btn-next"
-              onClick={() => setShowVideoQR(true)}
-            >
-              Iniciar grabación de video
-            </button>
-          )}
-          {showVideoQR && therapistId && (
-            <QRRecordPrompt
-              type="video"
-              therapistId={therapistId}
-              stimulusText={texto}
-              onComplete={handleVideoComplete}
-              onCancel={() => setShowVideoQR(false)}
-            />
-          )}
-        </div>
-      )}
-    </>
-  );
-
-  // ── Step 4 ──
-  const renderStep4 = () => (
-    <>
-      <h3>4. Imagen, pregunta y contexto</h3>
+      <h3>3. Imagen, pregunta y contexto</h3>
 
       <div className="tem-field">
-        <label>Imagen del estímulo</label>
+        <label>
+          Imagen del estímulo <span className="tem-required">*</span>
+        </label>
         <input
           type="file"
           accept="image/*"
@@ -520,28 +512,40 @@ export default function AddTEMStimulus() {
           </div>
         ) : (
           <div
-            className="tem-image-upload-area"
+            className={`tem-image-upload-area ${!imagenFile ? "tem-field-required" : ""}`}
             onClick={() => fileInputRef.current?.click()}
           >
             📁 Haz clic para seleccionar una imagen
           </div>
         )}
+        {!imagenFile && (
+          <span className="tem-field-hint">La imagen es obligatoria</span>
+        )}
       </div>
 
       <div className="tem-field">
-        <label>Pregunta (paso 5 de la terapia)</label>
+        <label>
+          Pregunta (paso 5 de la terapia) <span className="tem-required">*</span>
+        </label>
         <textarea
           value={pregunta}
           onChange={(e) => setPregunta(e.target.value)}
           placeholder="Ej: ¿Qué está haciendo el gato?"
           rows={2}
+          className={!pregunta.trim() ? "tem-input-required" : ""}
         />
+        {!pregunta.trim() && (
+          <span className="tem-field-hint">La pregunta es obligatoria</span>
+        )}
       </div>
 
       <div className="tem-field">
-        <label>Contexto / Categoría</label>
+        <label>
+          Contexto / Categoría <span className="tem-required">*</span>
+        </label>
         <select
           value={categoria}
+          className={!categoria ? "tem-input-required" : ""}
           onChange={(e) => {
             if (e.target.value === "__new__") {
               setShowNewContext(true);
@@ -552,7 +556,7 @@ export default function AddTEMStimulus() {
             }
           }}
         >
-          <option value="">Sin contexto</option>
+          <option value="">— Selecciona un contexto —</option>
           {allContexts.map((c) => (
             <option key={c.id} value={c.contexto}>
               {c.contexto}
@@ -575,26 +579,21 @@ export default function AddTEMStimulus() {
     </>
   );
 
-  const handleRerecordAudio = () => {
+  const handleRerecord = () => {
     setAudioGsUrl("");
+    setVideoGsUrl("");
     setAudioDurationMs(0);
     setTimings({ onsets_ms: [], durations_ms: [] });
     setAudioPreviewUrl(null);
-    setShowAudioQR(false);
+    setVideoPreviewUrl(null);
+    setShowRecordingQR(false);
     setStep(1);
   };
 
-  const handleRerecordVideo = () => {
-    setVideoGsUrl("");
-    setVideoPreviewUrl(null);
-    setShowVideoQR(false);
-    setStep(2);
-  };
-
-  // ── Step 5 ──
-  const renderStep5 = () => (
+  // ── Step 4 ──
+  const renderStep4 = () => (
     <>
-      <h3>5. Resumen del estímulo</h3>
+      <h3>4. Resumen del estímulo</h3>
 
       <div className="tem-summary-section">
         <h4>Texto y nivel</h4>
@@ -619,26 +618,24 @@ export default function AddTEMStimulus() {
         </p>
 
         <div style={{ marginBottom: "1rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
-            <strong style={{ fontSize: "0.92rem" }}>🎤 Audio de referencia{audioDurationMs > 0 ? ` (${(audioDurationMs / 1000).toFixed(1)}s)` : ""}</strong>
-            <button className="tem-skip-btn" style={{ marginTop: 0 }} onClick={handleRerecordAudio}>Volver a grabar audio</button>
-          </div>
+          <strong style={{ fontSize: "0.92rem" }}>🎤 Audio{audioDurationMs > 0 ? ` (${(audioDurationMs / 1000).toFixed(1)}s)` : ""}</strong>
           {audioPreviewUrl
-            ? <audio src={audioPreviewUrl} controls style={{ width: "100%" }} />
+            ? <audio src={audioPreviewUrl} controls style={{ width: "100%", marginTop: "0.3rem" }} />
             : <span style={{ color: "#d9534f", fontSize: "0.88rem" }}>❌ Sin audio grabado</span>
           }
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
-            <strong style={{ fontSize: "0.92rem" }}>📹 Video de labios (sin sonido)</strong>
-            <button className="tem-skip-btn" style={{ marginTop: 0 }} onClick={handleRerecordVideo}>Volver a grabar video</button>
-          </div>
+          <strong style={{ fontSize: "0.92rem" }}>📹 Video (sin sonido)</strong>
           {videoPreviewUrl
-            ? <video src={videoPreviewUrl} controls playsInline muted style={{ maxWidth: "100%", borderRadius: "0.5rem" }} />
+            ? <video src={videoPreviewUrl} controls playsInline muted style={{ maxWidth: "100%", borderRadius: "0.5rem", marginTop: "0.3rem" }} />
             : <span style={{ color: "#d9534f", fontSize: "0.88rem" }}>❌ Sin video grabado</span>
           }
         </div>
+
+        <button className="tem-skip-btn" onClick={handleRerecord}>
+          Volver a grabar audio y video
+        </button>
 
         <div className="tem-summary-field">
           <strong>Imagen:</strong>{" "}
@@ -676,7 +673,6 @@ export default function AddTEMStimulus() {
     renderStep2,
     renderStep3,
     renderStep4,
-    renderStep5,
   ];
 
   return (

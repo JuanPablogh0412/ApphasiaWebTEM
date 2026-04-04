@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import "./Navbar.css";
 
 const Navbar = ({ active }) => {
   const navigate = useNavigate();
-  const email = localStorage.getItem("terapeutaEmail");
+  const { user, logout } = useAuth();
+  const email = user?.email || "";
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -13,23 +15,34 @@ const Navbar = ({ active }) => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("terapeutaEmail");
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
-  const tabs = [
-    { key: "dashboard", label: "Dashboard" },
-    { key: "pacientes", label: "Pacientes" },
-    { key: "ejercicios", label: "Ejercicios" },
-  ];
+  const { role } = useAuth();
+
+  const tabsByRole = {
+    terapeuta: [
+      { key: "dashboard", label: "Dashboard" },
+      { key: "pacientes", label: "Pacientes" },
+      { key: "ejercicios", label: "Ejercicios" },
+    ],
+    creador: [
+      { key: "creador/dashboard", label: "Mis Estímulos" },
+      { key: "creador/ejercicios/nuevo-tem", label: "Nuevo Estímulo" },
+    ],
+  };
+
+  const tabs = tabsByRole[role] || tabsByRole.terapeuta;
+  const homeRoute = role === "creador" ? "/creador/dashboard" : "/dashboard";
 
   return (
     <nav className={`navbar-modern fixed-top ${scrolled ? "scrolled" : ""}`} aria-label="Main navigation">
       <div className="navbar-inner container-fluid px-4">
 
         {/* LOGOS */}
-        <div className="navbar-logos" onClick={() => navigate("/dashboard")} role="button" tabIndex={0}>
+        <div className="navbar-logos" onClick={() => navigate(homeRoute)} role="button" tabIndex={0}>
           <img
             src="https://raw.githubusercontent.com/Tesis-Aphasia/Web-App-RehabilitIA/refs/heads/main/src/assets/brain_logo.png"
             className="logo-rehab"
