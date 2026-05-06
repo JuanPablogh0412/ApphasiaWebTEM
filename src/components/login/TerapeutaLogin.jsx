@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { loginUnified, resetTherapistPassword } from "../../services/therapistService";
 import { useAuth } from "../../context/AuthContext";
 import Footer from "../common/Footer";
+import logoApphasia from "../../assets/logoApphasia.png";
 import "./TerapeutaLogin.css";
 
 const TerapeutaLogin = () => {
@@ -86,7 +87,7 @@ const TerapeutaLogin = () => {
 
             {/* Logo Uniandes */}
             <div className="left-uniandes">
-              <img src="https://raw.githubusercontent.com/Tesis-Aphasia/Web-App-RehabilitIA/refs/heads/main/src/assets/logo_disc.png" alt="Uniandes" />
+              <img src={logoApphasia} alt="Uniandes" />
 
             </div>
           </div>

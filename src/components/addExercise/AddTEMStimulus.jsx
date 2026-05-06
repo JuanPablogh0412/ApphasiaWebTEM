@@ -7,7 +7,7 @@ import QRRecordPrompt from "../recording/QRRecordPrompt";
 import { syllabify } from "../../utils/syllabifier";
 import { generateTonalPattern } from "../../utils/tonalPattern";
 import { validateStimulus } from "../../utils/temRubricValidator";
-import { generateTimings, getAudioDurationMs } from "../../utils/audioTimings";
+import { generateTimings, getAudioDurationMs, detectF0PerSyllable } from "../../utils/audioTimings";
 
 import { createTEMStimulus, checkTEMStimulusDuplicate, getTEMStorageUrl } from "../../services/temService";
 import { getAllContexts, createContext } from "../../services/contextService";
@@ -41,14 +41,35 @@ export default function AddTEMStimulus() {
   // Duplicate detection
   const [duplicateWarning, setDuplicateWarning] = useState(null); // null | "checking" | { found: true, texto } | { found: false }
 
-  // ── Step 2 state (grabación dual: audio + video) ──
+  // ── Step 2 state — slot 1: Entonado ──
   const [audioGsUrl, setAudioGsUrl] = useState("");
   const [audioDurationMs, setAudioDurationMs] = useState(0);
   const [timings, setTimings] = useState({ onsets_ms: [], durations_ms: [] });
+  const [f0Entonado, setF0Entonado] = useState([]);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState(null);
   const [videoGsUrl, setVideoGsUrl] = useState("");
   const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
   const [showRecordingQR, setShowRecordingQR] = useState(false);
+
+  // ── Step 2 state — slot 2: Sprechgesang (solo N3) ──
+  const [audioSprechGsUrl, setAudioSprechGsUrl] = useState("");
+  const [audioSprechPreviewUrl, setAudioSprechPreviewUrl] = useState(null);
+  const [videoSprechGsUrl, setVideoSprechGsUrl] = useState("");
+  const [videoSprechPreviewUrl, setVideoSprechPreviewUrl] = useState(null);
+  const [audioDurationMsSprech, setAudioDurationMsSprech] = useState(0);
+  const [timingsSprech, setTimingsSprech] = useState({ onsets_ms: [], durations_ms: [] });
+  const [f0Sprech, setF0Sprech] = useState([]);
+  const [showRecordingQR2, setShowRecordingQR2] = useState(false);
+
+  // ── Step 2 state — slot 3: Habla normal (solo N3) ──
+  const [audioHablaGsUrl, setAudioHablaGsUrl] = useState("");
+  const [audioHablaPreviewUrl, setAudioHablaPreviewUrl] = useState(null);
+  const [videoHablaGsUrl, setVideoHablaGsUrl] = useState("");
+  const [videoHablaPreviewUrl, setVideoHablaPreviewUrl] = useState(null);
+  const [audioDurationMsHabla, setAudioDurationMsHabla] = useState(0);
+  const [timingsHabla, setTimingsHabla] = useState({ onsets_ms: [], durations_ms: [] });
+  const [f0Habla, setF0Habla] = useState([]);
+  const [showRecordingQR3, setShowRecordingQR3] = useState(false);
 
   // ── Step 4 state (imagen + contexto) ──
   const [imagenFile, setImagenFile] = useState(null);
@@ -140,6 +161,13 @@ export default function AddTEMStimulus() {
       setAudioGsUrl(audioStorageUrl);
       setVideoGsUrl(videoStorageUrl);
       setShowRecordingQR(false);
+      // Al re-grabar slot 1, limpiar slots 2 y 3
+      setAudioSprechGsUrl(""); setVideoSprechGsUrl("");
+      setAudioSprechPreviewUrl(null); setVideoSprechPreviewUrl(null);
+      setShowRecordingQR2(false);
+      setAudioHablaGsUrl(""); setVideoHablaGsUrl("");
+      setAudioHablaPreviewUrl(null); setVideoHablaPreviewUrl(null);
+      setShowRecordingQR3(false);
 
       try {
         const [audioHttpUrl, videoHttpUrl] = await Promise.all([
@@ -149,16 +177,105 @@ export default function AddTEMStimulus() {
         setAudioPreviewUrl(audioHttpUrl);
         setVideoPreviewUrl(videoHttpUrl);
 
-        // Compute duration + timings from audio
+        // Compute duration + timings + F0 from audio
         const resp = await fetch(audioHttpUrl);
         const blob = await resp.blob();
         const file = new File([blob], "audio.webm", { type: blob.type });
         const dur = await getAudioDurationMs(file);
+        const t = generateTimings(syllables, dur);
         setAudioDurationMs(dur);
-        setTimings(generateTimings(syllables, dur));
+        setTimings(t);
+        try {
+          const f0 = await detectF0PerSyllable(file, t.onsets_ms, t.durations_ms);
+          setF0Entonado(f0);
+        } catch {
+          setF0Entonado([]);
+        }
       } catch {
         setAudioDurationMs(0);
         setTimings({ onsets_ms: [], durations_ms: [] });
+        setF0Entonado([]);
+      }
+    },
+    [syllables]
+  );
+
+  const handleRecordingComplete2 = useCallback(
+    async ({ audioStorageUrl, videoStorageUrl }) => {
+      setAudioSprechGsUrl(audioStorageUrl);
+      setVideoSprechGsUrl(videoStorageUrl);
+      setShowRecordingQR2(false);
+      // Al re-grabar slot 2, limpiar slot 3
+      setAudioHablaGsUrl(""); setVideoHablaGsUrl("");
+      setAudioHablaPreviewUrl(null); setVideoHablaPreviewUrl(null);
+      setAudioDurationMsHabla(0); setTimingsHabla({ onsets_ms: [], durations_ms: [] }); setF0Habla([]);
+      setShowRecordingQR3(false);
+
+      try {
+        const [audioHttpUrl, videoHttpUrl] = await Promise.all([
+          getRecordingDownloadUrl(audioStorageUrl),
+          getRecordingDownloadUrl(videoStorageUrl),
+        ]);
+        setAudioSprechPreviewUrl(audioHttpUrl);
+        setVideoSprechPreviewUrl(videoHttpUrl);
+
+        const resp = await fetch(audioHttpUrl);
+        const blob = await resp.blob();
+        const file = new File([blob], "audio.webm", { type: blob.type });
+        const dur = await getAudioDurationMs(file);
+        const t = generateTimings(syllables, dur);
+        setAudioDurationMsSprech(dur);
+        setTimingsSprech(t);
+        try {
+          const f0 = await detectF0PerSyllable(file, t.onsets_ms, t.durations_ms);
+          setF0Sprech(f0);
+        } catch {
+          setF0Sprech([]);
+        }
+      } catch {
+        setAudioSprechPreviewUrl(null);
+        setVideoSprechPreviewUrl(null);
+        setAudioDurationMsSprech(0);
+        setTimingsSprech({ onsets_ms: [], durations_ms: [] });
+        setF0Sprech([]);
+      }
+    },
+    [syllables]
+  );
+
+  const handleRecordingComplete3 = useCallback(
+    async ({ audioStorageUrl, videoStorageUrl }) => {
+      setAudioHablaGsUrl(audioStorageUrl);
+      setVideoHablaGsUrl(videoStorageUrl);
+      setShowRecordingQR3(false);
+
+      try {
+        const [audioHttpUrl, videoHttpUrl] = await Promise.all([
+          getRecordingDownloadUrl(audioStorageUrl),
+          getRecordingDownloadUrl(videoStorageUrl),
+        ]);
+        setAudioHablaPreviewUrl(audioHttpUrl);
+        setVideoHablaPreviewUrl(videoHttpUrl);
+
+        const resp = await fetch(audioHttpUrl);
+        const blob = await resp.blob();
+        const file = new File([blob], "audio.webm", { type: blob.type });
+        const dur = await getAudioDurationMs(file);
+        const t = generateTimings(syllables, dur);
+        setAudioDurationMsHabla(dur);
+        setTimingsHabla(t);
+        try {
+          const f0 = await detectF0PerSyllable(file, t.onsets_ms, t.durations_ms);
+          setF0Habla(f0);
+        } catch {
+          setF0Habla([]);
+        }
+      } catch {
+        setAudioHablaPreviewUrl(null);
+        setVideoHablaPreviewUrl(null);
+        setAudioDurationMsHabla(0);
+        setTimingsHabla({ onsets_ms: [], durations_ms: [] });
+        setF0Habla([]);
       }
     },
     [syllables]
@@ -207,6 +324,20 @@ export default function AddTEMStimulus() {
 
     setSaving(true);
     try {
+      const extraN3 = nivel === 3 ? {
+        audio_url_sprechgesang: audioSprechGsUrl,
+        video_url_sprechgesang: videoSprechGsUrl,
+        onsets_ms_sprechgesang: timingsSprech.onsets_ms,
+        durations_ms_sprechgesang: timingsSprech.durations_ms,
+        audio_duration_ms_sprechgesang: audioDurationMsSprech,
+        f0_template_hz_sprechgesang: f0Sprech,
+        audio_url_habla_normal: audioHablaGsUrl,
+        video_url_habla_normal: videoHablaGsUrl,
+        onsets_ms_habla_normal: timingsHabla.onsets_ms,
+        durations_ms_habla_normal: timingsHabla.durations_ms,
+        audio_duration_ms_habla_normal: audioDurationMsHabla,
+        f0_template_hz_habla_normal: f0Habla,
+      } : {};
       await createTEMStimulus(
         {
           texto: texto.trim(),
@@ -219,9 +350,11 @@ export default function AddTEMStimulus() {
           audio_duration_ms: audioDurationMs,
           onsets_ms: timings.onsets_ms,
           durations_ms: timings.durations_ms,
+          f0_template_hz: f0Entonado,
           video_url: videoGsUrl,
           creado_por: therapistId,
           estado: role === "creador" ? "pendiente_revision" : "aprobado",
+          ...extraN3,
         },
         imagenFile
       );
@@ -238,7 +371,14 @@ export default function AddTEMStimulus() {
   // ────────────────────────────────────────
   const canNext = () => {
     if (step === 0) return texto.trim().length > 0 && validation?.valid && duplicateWarning?.found !== true;
-    if (step === 1) return !!audioGsUrl && !!videoGsUrl;
+    if (step === 1) {
+      if (nivel === 3) {
+        return !!audioGsUrl && !!videoGsUrl &&
+               !!audioSprechGsUrl && !!videoSprechGsUrl &&
+               !!audioHablaGsUrl && !!videoHablaGsUrl;
+      }
+      return !!audioGsUrl && !!videoGsUrl;
+    }
     if (step === 2) return !!imagenFile && pregunta.trim().length > 0 && !!categoria;
     return true;
   };
@@ -398,82 +538,165 @@ export default function AddTEMStimulus() {
   );
 
   // ── Step 2: Grabación unificada (audio + video) ──
+  const renderRecordingSlot = ({
+    slotNumber,
+    label,
+    stimulusTextSuffix,
+    audioGsUrlVal,
+    videoGsUrlVal,
+    audioPreviewUrlVal,
+    videoPreviewUrlVal,
+    audioDurationMsVal,
+    showQR,
+    setShowQR,
+    onComplete,
+    onClear,
+    disabled,
+  }) => (
+    <div className="tem-recording-slot" style={{ marginBottom: "1.5rem", padding: "1rem", border: "1px solid #e0e0e0", borderRadius: "0.5rem", opacity: disabled ? 0.5 : 1 }}>
+      <h4 style={{ margin: "0 0 0.5rem", fontSize: "0.95rem" }}>
+        Grabación {slotNumber}: <span style={{ fontWeight: 400 }}>{label}</span>
+      </h4>
+
+      {audioGsUrlVal && videoGsUrlVal && !showQR ? (
+        <div>
+          <div className="tem-validation-panel valid" style={{ marginBottom: "0.5rem" }}>
+            <strong>✅ Grabado correctamente</strong>
+            {audioDurationMsVal > 0 && (
+              <p style={{ margin: "0.2rem 0 0", fontSize: "0.85rem" }}>
+                Duración: {(audioDurationMsVal / 1000).toFixed(1)}s
+              </p>
+            )}
+          </div>
+          {audioPreviewUrlVal && (
+            <div style={{ marginTop: "0.4rem" }}>
+              <strong style={{ fontSize: "0.88rem" }}>🎤 Audio:</strong>
+              <audio src={audioPreviewUrlVal} controls style={{ width: "100%", marginTop: "0.3rem" }} />
+            </div>
+          )}
+          {videoPreviewUrlVal && (
+            <div style={{ marginTop: "0.4rem" }}>
+              <strong style={{ fontSize: "0.88rem" }}>📹 Video (sin sonido):</strong>
+              <video src={videoPreviewUrlVal} controls playsInline muted style={{ maxWidth: "100%", borderRadius: "0.5rem", marginTop: "0.3rem" }} />
+            </div>
+          )}
+          {!disabled && (
+            <button className="tem-skip-btn" onClick={onClear}>
+              Volver a grabar
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="tem-qr-section">
+          {!showQR && (
+            <button
+              className="tem-btn tem-btn-next"
+              disabled={disabled}
+              onClick={() => !disabled && setShowQR(true)}
+            >
+              Iniciar grabación
+            </button>
+          )}
+          {showQR && therapistId && (
+            <QRRecordPrompt
+              type="video_audio"
+              therapistId={therapistId}
+              stimulusText={`${texto}${stimulusTextSuffix}`}
+              syllables={syllables}
+              tonalPattern={tonalPattern}
+              onComplete={onComplete}
+              onCancel={() => setShowQR(false)}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   const renderStep2 = () => (
     <>
       <h3>2. Grabación de video y audio</h3>
       <p style={{ color: "#666", fontSize: "0.92rem" }}>
         Escanea el código QR con tu celular para grabar <strong>simultáneamente</strong> el
-        audio y el video del estímulo. Se generarán dos archivos separados (audio puro y video
-        sin sonido) de forma automática.
+        audio y el video del estímulo.
+        {nivel === 3 && " Para Nivel 3 se requieren 3 grabaciones secuenciales."}
       </p>
 
-      {audioGsUrl && videoGsUrl && !showRecordingQR ? (
-        <div>
-          <div className="tem-validation-panel valid">
-            <strong>✅ Audio y video grabados correctamente</strong>
-            {audioDurationMs > 0 && (
-              <p style={{ margin: "0.3rem 0 0" }}>
-                Duración: {(audioDurationMs / 1000).toFixed(1)}s — Timings
-                generados para {syllables.length} sílabas
-              </p>
-            )}
-          </div>
+      {renderRecordingSlot({
+        slotNumber: 1,
+        label: nivel === 3 ? "Entonado — melodía completa" : "Audio y video",
+        stimulusTextSuffix: nivel === 3 ? " (Entonado — melodía completa)" : "",
+        audioGsUrlVal: audioGsUrl,
+        videoGsUrlVal: videoGsUrl,
+        audioPreviewUrlVal: audioPreviewUrl,
+        videoPreviewUrlVal: videoPreviewUrl,
+        audioDurationMsVal: audioDurationMs,
+        showQR: showRecordingQR,
+        setShowQR: setShowRecordingQR,
+        onComplete: handleRecordingComplete,
+        onClear: () => {
+          setAudioGsUrl(""); setVideoGsUrl("");
+          setAudioDurationMs(0); setTimings({ onsets_ms: [], durations_ms: [] }); setF0Entonado([]);
+          setAudioPreviewUrl(null); setVideoPreviewUrl(null);
+          setShowRecordingQR(true);
+          // Cascade: clear 2 and 3
+          setAudioSprechGsUrl(""); setVideoSprechGsUrl("");
+          setAudioSprechPreviewUrl(null); setVideoSprechPreviewUrl(null);
+          setAudioDurationMsSprech(0); setTimingsSprech({ onsets_ms: [], durations_ms: [] }); setF0Sprech([]);
+          setShowRecordingQR2(false);
+          setAudioHablaGsUrl(""); setVideoHablaGsUrl("");
+          setAudioHablaPreviewUrl(null); setVideoHablaPreviewUrl(null);
+          setAudioDurationMsHabla(0); setTimingsHabla({ onsets_ms: [], durations_ms: [] }); setF0Habla([]);
+          setShowRecordingQR3(false);
+        },
+        disabled: false,
+      })}
 
-          {audioPreviewUrl && (
-            <div style={{ marginTop: "0.6rem" }}>
-              <strong style={{ fontSize: "0.88rem" }}>🎤 Audio:</strong>
-              <audio src={audioPreviewUrl} controls style={{ width: "100%", marginTop: "0.3rem" }} />
-            </div>
-          )}
-          {videoPreviewUrl && (
-            <div style={{ marginTop: "0.6rem" }}>
-              <strong style={{ fontSize: "0.88rem" }}>📹 Video (sin sonido):</strong>
-              <video
-                src={videoPreviewUrl}
-                controls
-                playsInline
-                muted
-                style={{ maxWidth: "100%", borderRadius: "0.5rem", marginTop: "0.3rem" }}
-              />
-            </div>
-          )}
+      {nivel === 3 && renderRecordingSlot({
+        slotNumber: 2,
+        label: "Sprechgesang — melodía suavizada",
+        stimulusTextSuffix: " (Sprechgesang — melodía suavizada)",
+        audioGsUrlVal: audioSprechGsUrl,
+        videoGsUrlVal: videoSprechGsUrl,
+        audioPreviewUrlVal: audioSprechPreviewUrl,
+        videoPreviewUrlVal: videoSprechPreviewUrl,
+        audioDurationMsVal: audioDurationMsSprech,
+        showQR: showRecordingQR2,
+        setShowQR: setShowRecordingQR2,
+        onComplete: handleRecordingComplete2,
+        onClear: () => {
+          setAudioSprechGsUrl(""); setVideoSprechGsUrl("");
+          setAudioSprechPreviewUrl(null); setVideoSprechPreviewUrl(null);
+          setAudioDurationMsSprech(0); setTimingsSprech({ onsets_ms: [], durations_ms: [] }); setF0Sprech([]);
+          setShowRecordingQR2(true);
+          // Cascade: clear 3
+          setAudioHablaGsUrl(""); setVideoHablaGsUrl("");
+          setAudioHablaPreviewUrl(null); setVideoHablaPreviewUrl(null);
+          setAudioDurationMsHabla(0); setTimingsHabla({ onsets_ms: [], durations_ms: [] }); setF0Habla([]);
+          setShowRecordingQR3(false);
+        },
+        disabled: !(audioGsUrl && videoGsUrl),
+      })}
 
-          <button
-            className="tem-skip-btn"
-            onClick={() => {
-              setAudioGsUrl("");
-              setVideoGsUrl("");
-              setAudioDurationMs(0);
-              setTimings({ onsets_ms: [], durations_ms: [] });
-              setAudioPreviewUrl(null);
-              setVideoPreviewUrl(null);
-              setShowRecordingQR(true);
-            }}
-          >
-            Volver a grabar
-          </button>
-        </div>
-      ) : (
-        <div className="tem-qr-section">
-          {!showRecordingQR && (
-            <button
-              className="tem-btn tem-btn-next"
-              onClick={() => setShowRecordingQR(true)}
-            >
-              Iniciar grabación
-            </button>
-          )}
-          {showRecordingQR && therapistId && (
-            <QRRecordPrompt
-              type="video_audio"
-              therapistId={therapistId}
-              stimulusText={texto}
-              onComplete={handleRecordingComplete}
-              onCancel={() => setShowRecordingQR(false)}
-            />
-          )}
-        </div>
-      )}
+      {nivel === 3 && renderRecordingSlot({
+        slotNumber: 3,
+        label: "Habla normal — sin melodía",
+        stimulusTextSuffix: " (Habla normal — sin melodía)",
+        audioGsUrlVal: audioHablaGsUrl,
+        videoGsUrlVal: videoHablaGsUrl,
+        audioPreviewUrlVal: audioHablaPreviewUrl,
+        videoPreviewUrlVal: videoHablaPreviewUrl,
+        audioDurationMsVal: audioDurationMsHabla,
+        showQR: showRecordingQR3,
+        setShowQR: setShowRecordingQR3,
+        onComplete: handleRecordingComplete3,
+        onClear: () => {
+          setAudioHablaGsUrl(""); setVideoHablaGsUrl("");
+          setAudioHablaPreviewUrl(null); setVideoHablaPreviewUrl(null);
+          setShowRecordingQR3(true);
+        },
+        disabled: !(audioSprechGsUrl && videoSprechGsUrl),
+      })}
     </>
   );
 
@@ -584,9 +807,19 @@ export default function AddTEMStimulus() {
     setVideoGsUrl("");
     setAudioDurationMs(0);
     setTimings({ onsets_ms: [], durations_ms: [] });
+    setF0Entonado([]);
     setAudioPreviewUrl(null);
     setVideoPreviewUrl(null);
     setShowRecordingQR(false);
+    // Also clear slots 2 and 3 if N3
+    setAudioSprechGsUrl(""); setVideoSprechGsUrl("");
+    setAudioSprechPreviewUrl(null); setVideoSprechPreviewUrl(null);
+    setAudioDurationMsSprech(0); setTimingsSprech({ onsets_ms: [], durations_ms: [] }); setF0Sprech([]);
+    setShowRecordingQR2(false);
+    setAudioHablaGsUrl(""); setVideoHablaGsUrl("");
+    setAudioHablaPreviewUrl(null); setVideoHablaPreviewUrl(null);
+    setAudioDurationMsHabla(0); setTimingsHabla({ onsets_ms: [], durations_ms: [] }); setF0Habla([]);
+    setShowRecordingQR3(false);
     setStep(1);
   };
 
@@ -618,7 +851,7 @@ export default function AddTEMStimulus() {
         </p>
 
         <div style={{ marginBottom: "1rem" }}>
-          <strong style={{ fontSize: "0.92rem" }}>🎤 Audio{audioDurationMs > 0 ? ` (${(audioDurationMs / 1000).toFixed(1)}s)` : ""}</strong>
+          <strong style={{ fontSize: "0.92rem" }}>🎤 Audio{nivel === 3 ? " — Entonado" : ""}{audioDurationMs > 0 ? ` (${(audioDurationMs / 1000).toFixed(1)}s)` : ""}</strong>
           {audioPreviewUrl
             ? <audio src={audioPreviewUrl} controls style={{ width: "100%", marginTop: "0.3rem" }} />
             : <span style={{ color: "#d9534f", fontSize: "0.88rem" }}>❌ Sin audio grabado</span>
@@ -626,15 +859,48 @@ export default function AddTEMStimulus() {
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
-          <strong style={{ fontSize: "0.92rem" }}>📹 Video (sin sonido)</strong>
+          <strong style={{ fontSize: "0.92rem" }}>📹 Video (sin sonido){nivel === 3 ? " — Entonado" : ""}</strong>
           {videoPreviewUrl
             ? <video src={videoPreviewUrl} controls playsInline muted style={{ maxWidth: "100%", borderRadius: "0.5rem", marginTop: "0.3rem" }} />
             : <span style={{ color: "#d9534f", fontSize: "0.88rem" }}>❌ Sin video grabado</span>
           }
         </div>
 
+        {nivel === 3 && (
+          <>
+            <div style={{ marginBottom: "1rem" }}>
+              <strong style={{ fontSize: "0.92rem" }}>🎤 Audio — Sprechgesang</strong>
+              {audioSprechPreviewUrl
+                ? <audio src={audioSprechPreviewUrl} controls style={{ width: "100%", marginTop: "0.3rem" }} />
+                : <span style={{ color: "#d9534f", fontSize: "0.88rem" }}>❌ Sin audio grabado</span>
+              }
+            </div>
+            <div style={{ marginBottom: "1rem" }}>
+              <strong style={{ fontSize: "0.92rem" }}>📹 Video (sin sonido) — Sprechgesang</strong>
+              {videoSprechPreviewUrl
+                ? <video src={videoSprechPreviewUrl} controls playsInline muted style={{ maxWidth: "100%", borderRadius: "0.5rem", marginTop: "0.3rem" }} />
+                : <span style={{ color: "#d9534f", fontSize: "0.88rem" }}>❌ Sin video grabado</span>
+              }
+            </div>
+            <div style={{ marginBottom: "1rem" }}>
+              <strong style={{ fontSize: "0.92rem" }}>🎤 Audio — Habla normal</strong>
+              {audioHablaPreviewUrl
+                ? <audio src={audioHablaPreviewUrl} controls style={{ width: "100%", marginTop: "0.3rem" }} />
+                : <span style={{ color: "#d9534f", fontSize: "0.88rem" }}>❌ Sin audio grabado</span>
+              }
+            </div>
+            <div style={{ marginBottom: "1rem" }}>
+              <strong style={{ fontSize: "0.92rem" }}>📹 Video (sin sonido) — Habla normal</strong>
+              {videoHablaPreviewUrl
+                ? <video src={videoHablaPreviewUrl} controls playsInline muted style={{ maxWidth: "100%", borderRadius: "0.5rem", marginTop: "0.3rem" }} />
+                : <span style={{ color: "#d9534f", fontSize: "0.88rem" }}>❌ Sin video grabado</span>
+              }
+            </div>
+          </>
+        )}
+
         <button className="tem-skip-btn" onClick={handleRerecord}>
-          Volver a grabar audio y video
+          Volver a grabar{nivel === 3 ? " (borrará las 3 grabaciones)" : " audio y video"}
         </button>
 
         <div className="tem-summary-field">

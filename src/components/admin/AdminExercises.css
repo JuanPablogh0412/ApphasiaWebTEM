@@ -1,0 +1,245 @@
+.admin-exercises {
+  margin-top: 1rem;
+}
+
+/* ── Sub-tabs ─────────────────────────────────────────── */
+.ae-subtabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 0.9rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ae-subtab-btn {
+  padding: 0.45rem 1.1rem;
+  border: 1.5px solid #e0d5d0;
+  border-radius: 2rem;
+  background: #f6f6f6;
+  color: #666;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ae-subtab-btn:hover {
+  border-color: #da9371;
+  color: #da9371;
+}
+.ae-subtab-btn.active {
+  background: linear-gradient(135deg, #b0d3eb 0%, #da9371 100%);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ── Content wrapper ──────────────────────────────────── */
+.ae-content {
+  background: #fff;
+  border-radius: 0.9rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+  padding: 1.4rem;
+  min-height: 300px;
+}
+
+.ae-empty {
+  color: #999;
+  font-size: 0.95rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+/* ── Table ────────────────────────────────────────────── */
+.ae-table-wrapper {
+  overflow-x: auto;
+}
+
+.ae-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ae-table th {
+  background: #f5f0ee;
+  color: #555;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  border-bottom: 2px solid #e8ddd9;
+  white-space: nowrap;
+}
+
+.ae-table td {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid #f2eeec;
+  vertical-align: middle;
+  color: #333;
+}
+
+.ae-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ae-table tr:hover td {
+  background: #fdf9f7;
+}
+
+/* ── Badges & tags ────────────────────────────────────── */
+.ae-cell-bold {
+  font-weight: 600;
+}
+
+.ae-monospace {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.ae-nivel-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: linear-gradient(135deg, #b0d3eb 0%, #da9371 100%);
+  color: #fff;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.ae-tag {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #eef4fa;
+  color: #3a7ab0;
+}
+.ae-tag.privado {
+  background: #fdf0ef;
+  color: #c0392b;
+}
+
+/* ── Action buttons ───────────────────────────────────── */
+.ae-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ae-btn-primary-sm,
+.ae-btn-secondary-sm,
+.ae-btn-danger-sm,
+.ae-btn-cancel-sm,
+.ae-btn-confirm {
+  padding: 0.3rem 0.7rem;
+  border: none;
+  border-radius: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.ae-btn-primary-sm {
+  background: #da9371;
+  color: #fff;
+}
+.ae-btn-secondary-sm {
+  background: #eef4fa;
+  color: #3a7ab0;
+}
+.ae-btn-danger-sm {
+  background: #fdf0ef;
+  color: #c0392b;
+}
+.ae-btn-cancel-sm {
+  background: #f0f0f0;
+  color: #555;
+}
+.ae-btn-confirm {
+  background: #c0392b;
+  color: #fff;
+}
+.ae-btn-primary-sm:hover,
+.ae-btn-secondary-sm:hover,
+.ae-btn-danger-sm:hover,
+.ae-btn-cancel-sm:hover,
+.ae-btn-confirm:hover {
+  opacity: 0.82;
+}
+
+/* ── Inline confirm ───────────────────────────────────── */
+.ae-inline-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.ae-inline-confirm span {
+  font-size: 0.82rem;
+  color: #c0392b;
+  font-weight: 600;
+}
+
+/* ── Full-page confirm overlay ────────────────────────── */
+.ae-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.ae-confirm-box {
+  background: #fff;
+  border-radius: 0.9rem;
+  padding: 1.8rem 2rem;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.ae-confirm-box p {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 1.2rem;
+}
+
+.ae-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+/* ── Loading ──────────────────────────────────────────── */
+.ae-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 3rem 0;
+  color: #999;
+}
+
+.ae-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #f0e8e4;
+  border-top-color: #da9371;
+  border-radius: 50%;
+  animation: ae-spin 0.65s linear infinite;
+}
+
+@keyframes ae-spin {
+  to { transform: rotate(360deg); }
+}

@@ -72,7 +72,7 @@ const PacientesTerapeuta = () => {
                 <th>Nombre</th>
                 <th>Email</th>
                 <th>Ejercicios Asignados</th>
-                <th className="text-end">Acción</th>
+                <th className="text-end">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -88,7 +88,14 @@ const PacientesTerapeuta = () => {
                     <td>{p.nombre || "—"}</td>
                     <td>{p.email || "—"}</td>
                     <td>{p.cantidadEjercicios ?? 0}</td>
-                    <td className="text-end">
+                    <td className="text-end" style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: "rgba(218,147,113,0.13)", color: "#c17d5e", border: "1.5px solid #da9371", fontWeight: 600 }}
+                        onClick={() => navigate(`/pacientes/${p.id}?tab=perfil`)}
+                      >
+                        Ver perfil
+                      </button>
                       <button
                         className="btn btn-sm btn-secondary"
                         onClick={() => navigate(`/pacientes/${p.id}`)}

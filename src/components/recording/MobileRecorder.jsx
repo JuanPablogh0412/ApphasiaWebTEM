@@ -38,10 +38,14 @@ export default function MobileRecorder() {
   const streamRef = useRef(null);
   const liveVideoRef = useRef(null);
 
-  // Load session info
+  // Load session info — authenticate anonymously first so Firestore rules allow reads
   useEffect(() => {
     (async () => {
       try {
+        // Ensure the user is signed in (anonymously) before any Firestore access
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
         const data = await getRecordingSession(token);
         if (!data) {
           setError("Sesión de grabación no encontrada o expirada.");
@@ -236,18 +240,31 @@ export default function MobileRecorder() {
     if (!blob || !token) return;
     setUploading(true);
     try {
+      // Re-check auth — may have expired or been lost
       if (!auth.currentUser) {
         await signInAnonymously(auth);
       }
       if (isDual && videoBlob) {
-        // Subir ambos archivos: audio separado + video sin audio
         await uploadAndCompleteDualRecording(token, blob, videoBlob, "webm");
       } else {
         await uploadAndCompleteRecording(token, blob, "webm");
       }
       setDone(true);
     } catch (e) {
-      setError("Error al subir la grabación. Intenta de nuevo.");
+      console.error("Upload error:", e);
+      // Retry auth once and try again
+      try {
+        await signInAnonymously(auth);
+        if (isDual && videoBlob) {
+          await uploadAndCompleteDualRecording(token, blob, videoBlob, "webm");
+        } else {
+          await uploadAndCompleteRecording(token, blob, "webm");
+        }
+        setDone(true);
+      } catch (e2) {
+        console.error("Upload retry error:", e2);
+        setError("Error al subir la grabación. Intenta de nuevo.");
+      }
     } finally {
       setUploading(false);
     }
@@ -315,6 +332,22 @@ export default function MobileRecorder() {
           <span className="stimulus-text">
             «{session.metadata.stimulusText}»
           </span>
+        )}
+        {session.metadata?.syllables?.length > 0 && session.metadata?.tonalPattern && (
+          <div className="tonal-pattern-display">
+            <p className="tonal-label">Patrón tonal por sílaba:</p>
+            <div className="tonal-syllables">
+              {session.metadata.syllables.map((syl, i) => (
+                <div key={i} className="tonal-syllable-item">
+                  <span className={`tonal-tone ${session.metadata.tonalPattern[i] === "H" ? "tone-high" : "tone-low"}`}>
+                    {session.metadata.tonalPattern[i] === "H" ? "Alto" : "Bajo"}
+                  </span>
+                  <span className="tonal-syl">{syl}</span>
+                </div>
+              ))}
+            </div>
+            <p className="tonal-pattern-str">{session.metadata.tonalPattern}</p>
+          </div>
         )}
       </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./VNESTTable.css";
 
-const VNESTTable = ({ exercises, onEdit, onView }) => {
+const VNESTTable = ({ exercises, onEdit, onView, onDelete }) => {
   // --- ESTADO PARA FILTROS ---
   const [filterVisibilidad, setFilterVisibilidad] = useState("Todos");
   const [filterEstado, setFilterEstado] = useState("Todos");
@@ -252,6 +252,14 @@ const VNESTTable = ({ exercises, onEdit, onView }) => {
                     >
                       Ver
                     </button>
+                    {onDelete && (
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => onDelete(e)}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

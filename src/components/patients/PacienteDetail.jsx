@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../common/Navbar";
 import { getAssignedExercises, getPatientById } from "../../services/patientService";
 import { getExerciseDetails, getExerciseById } from "../../services/exercisesService";
@@ -10,6 +10,7 @@ import PatientAssignExercise from "./PatientAssignExercise";
 import PacienteVNEST from "./PacienteVNEST";
 import PacienteSR from "./PacienteSR";
 import PacienteTEM from "./PacienteTEM";
+import PatientProfile from "./PatientProfile";
 import TemSessionDetail from "./TemSessionDetail";
 import TemAnalysisDetail from "./TemAnalysisDetail";
 import { subscribePatientTEMSessions } from "../../services/temService";
@@ -19,6 +20,7 @@ import "./PacienteDetail.css";
 const PacienteDetail = () => {
   const { pacienteId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, role } = useAuth();
   const [patientInfo, setPatientInfo] = useState(null);
   const [exercises, setExercises] = useState([]);
@@ -28,7 +30,18 @@ const PacienteDetail = () => {
   const [showSRViewer, setShowSRViewer] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showPersonalizeModal, setShowPersonalizeModal] = useState(false);
-  const [activeTerapia, setActiveTerapia] = useState("VNEST");
+
+  // Leer tab inicial desde query param ?tab=perfil|TEM|SR|VNEST
+  const initialTab = (() => {
+    const params = new URLSearchParams(location.search);
+    const t = params.get("tab")?.toUpperCase();
+    if (t === "PERFIL") return "PERFIL";
+    if (t === "TEM") return "TEM";
+    if (t === "SR") return "SR";
+    return "VNEST";
+  })();
+
+  const [activeTerapia, setActiveTerapia] = useState(initialTab);
   const [temSessions, setTemSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [showSessionDetail, setShowSessionDetail] = useState(false);
@@ -161,7 +174,7 @@ const PacienteDetail = () => {
 
         {/* --- FILTRO DE TERAPIAS --- */}
         <div className="terapia-tabs mb-4">
-          {["VNEST", "SR", "TEM"].map((terapia) => (
+          {["VNEST", "SR", "TEM", "PERFIL"].map((terapia) => (
             <button
               key={terapia}
               className={`tab-btn ${
@@ -169,7 +182,7 @@ const PacienteDetail = () => {
               }`}
               onClick={() => setActiveTerapia(terapia)}
             >
-              {terapia}
+              {terapia === "PERFIL" ? "👤 Perfil" : terapia}
             </button>
           ))}
         </div>
@@ -185,13 +198,27 @@ const PacienteDetail = () => {
             exercises={detailedExercises.filter((e) => e.terapia === "SR")}
             onView={handleViewExercise}
           />
-        ) : (
+        ) : activeTerapia === "TEM" ? (
           <PacienteTEM
             sessions={temSessions}
             onViewSession={(s) => {
               setSelectedSession(s);
               setShowSessionDetail(true);
             }}
+            pacienteId={pacienteId}
+            patientInfo={patientInfo}
+            onNivelChanged={(nuevoNivel) =>
+              setPatientInfo((prev) => prev ? { ...prev, nivel_actual: nuevoNivel } : prev)
+            }
+          />
+        ) : (
+          <PatientProfile
+            patientInfo={patientInfo}
+            pacienteId={pacienteId}
+            onSwitchToTEM={() => setActiveTerapia("TEM")}
+            onNivelChanged={(nuevoNivel) =>
+              setPatientInfo((prev) => prev ? { ...prev, nivel_actual: nuevoNivel } : prev)
+            }
           />
         )}
 

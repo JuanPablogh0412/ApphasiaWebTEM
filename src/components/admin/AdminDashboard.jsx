@@ -11,6 +11,7 @@ import {
 } from "../../services/adminService";
 import { getTEMStorageUrl } from "../../services/temService";
 import { getUserDisplayInfo } from "../../services/therapistService";
+import AdminExercises from "./AdminExercises";
 import "./Admin.css";
 
 const AdminDashboard = () => {
@@ -186,6 +187,12 @@ const AdminDashboard = () => {
         >
           Estímulos TEM
           {pendingStimuliCount > 0 && <span className="admin-tab-badge">{pendingStimuliCount}</span>}
+        </button>
+        <button
+          className={`admin-tab-btn ${activeTab === "ejercicios" ? "active" : ""}`}
+          onClick={() => setActiveTab("ejercicios")}
+        >
+          Ejercicios
         </button>
       </div>
 
@@ -385,6 +392,9 @@ const AdminDashboard = () => {
           )}
         </>
       )}
+
+      {/* Tab: Ejercicios */}
+      {activeTab === "ejercicios" && <AdminExercises />}
     </div>
   );
 };

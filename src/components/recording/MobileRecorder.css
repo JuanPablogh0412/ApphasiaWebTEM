@@ -33,6 +33,70 @@
   margin-top: 0.4rem;
 }
 
+/* Patrón tonal display */
+.tonal-pattern-display {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  border: 1px solid #ddd;
+}
+
+.tonal-pattern-display .tonal-label {
+  font-size: 0.8rem;
+  color: #777;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tonal-syllables {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tonal-syllable-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 48px;
+}
+
+.tonal-tone {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+
+.tonal-tone.tone-high {
+  background: #ffecd2;
+  color: #e8590c;
+}
+
+.tonal-tone.tone-low {
+  background: #d0ebff;
+  color: #1971c2;
+}
+
+.tonal-syl {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.tonal-pattern-str {
+  margin: 0.5rem 0 0;
+  font-family: monospace;
+  font-size: 1rem;
+  color: #555;
+  letter-spacing: 0.15em;
+}
+
 /* Botón circular grande de grabar */
 .record-btn {
   width: 100px;

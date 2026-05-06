@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, functions } from "../../services/firebase";
 import { useAuth } from "../../context/AuthContext";
 import Footer from "../common/Footer";
+import logoApphasia from "../../assets/logoApphasia.png";
 import "./TerapeutaLogin.css";
 
 const CreadorRegistro = () => {
@@ -86,7 +87,7 @@ const CreadorRegistro = () => {
             </p>
             <div className="left-uniandes">
               <img
-                src="https://raw.githubusercontent.com/Tesis-Aphasia/Web-App-RehabilitIA/refs/heads/main/src/assets/logo_disc.png"
+                src={logoApphasia}
                 alt="Uniandes"
               />
             </div>

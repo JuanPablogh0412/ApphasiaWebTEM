@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import "./SRTable.css";
 
-const SRTable = ({ exercises, onEdit, onView }) => { // 👈 añadimos onView
+const SRTable = ({ exercises, onEdit, onView, onDelete }) => {
   const [filterEstado, setFilterEstado] = useState("Todos");
   const [filterIdPaciente, setFilterIdPaciente] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -126,10 +126,18 @@ const SRTable = ({ exercises, onEdit, onView }) => { // 👈 añadimos onView
                       </button>
                       <button
                         className="btn btn-sm btn-secondary"
-                        onClick={() => onView(e)} // 👈 botón VER
+                        onClick={() => onView(e)}
                       >
                         Ver
                       </button>
+                      {onDelete && (
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => onDelete(e)}
+                        >
+                          Eliminar
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

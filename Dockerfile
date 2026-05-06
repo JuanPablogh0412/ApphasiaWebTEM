@@ -31,16 +31,16 @@ RUN npm run build
 # Stage 2: Production server with nginx
 FROM nginx:alpine AS production
 
-# 🔥 Instalar wget para que funcione el HEALTHCHECK
+# Instalar wget para healthcheck
 RUN apk add --no-cache wget
 
-# Copy custom nginx configuration
+# Copy built app
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy custom nginx configuration
+# Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80
+# Expose HTTP (Cloudflare Flexible terminates HTTPS externally)
 EXPOSE 80
 
 # Health check

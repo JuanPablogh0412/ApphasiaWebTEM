@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import logoApphasia from "../../assets/logoApphasia.png";
 import "./Navbar.css";
 
 const Navbar = ({ active }) => {
@@ -52,7 +53,7 @@ const Navbar = ({ active }) => {
             Rehabilit<span className="logo-accent">IA</span>
           </div>
           {/* <img
-            src="https://raw.githubusercontent.com/Tesis-Aphasia/Web-App-RehabilitIA/refs/heads/main/src/assets/logo_disc.png"
+            src={logoApphasia}
             className="logo-uniandes"
             alt="Universidad de los Andes Logo"
           /> */}

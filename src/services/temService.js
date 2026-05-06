@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import { db, storage } from "./firebase";
+import { generateF0Template } from "../utils/f0Template";
 
 // ─── Colecciones TEM (TODAS son colecciones RAÍZ) ───
 // stimuli_TEM              → catálogo global de estímulos
@@ -355,11 +356,18 @@ export async function createTEMStimulus(data, imagenFile = null) {
     imagen_url = `gs://${imgRef.bucket}/${imgRef.fullPath}`;
   }
 
+  // Usar F0 real del audio si está disponible (detectado por autocorrelación en el browser),
+  // de lo contrario usar la plantilla generada a partir del patrón tonal.
+  const f0_template_hz = (data.f0_template_hz && data.f0_template_hz.length > 0)
+    ? data.f0_template_hz
+    : generateF0Template(data.patron_tonal);
+
   const docData = {
     texto: data.texto,
     syllables: data.syllables,
     num_silabas: data.syllables.length,
     patron_tonal: data.patron_tonal,
+    f0_template_hz,
     nivel_clinico: data.nivel_clinico,
     categoria: data.categoria || "",
     pregunta: data.pregunta || "",
@@ -372,6 +380,20 @@ export async function createTEMStimulus(data, imagenFile = null) {
     creado_por: data.creado_por || "",
     fecha_creacion: new Date().toISOString(),
     estado: data.estado || "aprobado",
+    ...(data.nivel_clinico === 3 ? {
+      audio_url_sprechgesang: data.audio_url_sprechgesang || "",
+      video_url_sprechgesang: data.video_url_sprechgesang || "",
+      onsets_ms_sprechgesang: data.onsets_ms_sprechgesang || [],
+      durations_ms_sprechgesang: data.durations_ms_sprechgesang || [],
+      audio_duration_ms_sprechgesang: data.audio_duration_ms_sprechgesang || 0,
+      f0_template_hz_sprechgesang: data.f0_template_hz_sprechgesang || [],
+      audio_url_habla_normal: data.audio_url_habla_normal || "",
+      video_url_habla_normal: data.video_url_habla_normal || "",
+      onsets_ms_habla_normal: data.onsets_ms_habla_normal || [],
+      durations_ms_habla_normal: data.durations_ms_habla_normal || [],
+      audio_duration_ms_habla_normal: data.audio_duration_ms_habla_normal || 0,
+      f0_template_hz_habla_normal: data.f0_template_hz_habla_normal || [],
+    } : {}),
   };
 
   await setDoc(doc(db, "stimuli_TEM", docId), docData);
@@ -416,6 +438,37 @@ export function subscribeTEMStimuliPending(callback) {
       callback([]);
     }
   );
+}
+
+/** Estímulos aprobados del catálogo global (para admin) */
+export function subscribeApprovedTEMStimuli(callback) {
+  const colRef = collection(db, "stimuli_TEM");
+  const q = query(colRef, where("estado", "==", "aprobado"));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => (b.fecha_creacion || "").localeCompare(a.fecha_creacion || ""));
+      callback(data);
+    },
+    (error) => {
+      console.error("[TEM] Error subscribing to approved stimuli (admin):", error.message);
+      callback([]);
+    }
+  );
+}
+
+/** Actualizar metadatos de un estímulo TEM (admin) */
+export async function updateTEMStimulus(id, data) {
+  const ref = doc(db, "stimuli_TEM", id);
+  await updateDoc(ref, data);
+}
+
+/** Eliminar un estímulo TEM del catálogo (admin) */
+export async function deleteTEMStimulus(id) {
+  const { deleteDoc } = await import("firebase/firestore");
+  const ref = doc(db, "stimuli_TEM", id);
+  await deleteDoc(ref);
 }
 
 /** Estímulos creados por un usuario específico (para dashboard del creador) */

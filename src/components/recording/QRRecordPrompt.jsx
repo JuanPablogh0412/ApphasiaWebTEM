@@ -13,6 +13,8 @@ import "./QRRecordPrompt.css";
  * - type: "audio" | "video" | "video_audio"
  * - therapistId: string
  * - stimulusText: string (para mostrar en la página del móvil)
+ * - syllables: string[] (sílabas del estímulo)
+ * - tonalPattern: string (patrón tonal, ej: "LHL")
  * - onComplete: (storageUrl: string) => void                         — para audio/video
  *               ({ audioStorageUrl, videoStorageUrl }: object) => void — para video_audio
  * - onCancel: () => void  (opcional)
@@ -21,6 +23,8 @@ export default function QRRecordPrompt({
   type,
   therapistId,
   stimulusText,
+  syllables,
+  tonalPattern,
   onComplete,
   onCancel,
 }) {
@@ -47,6 +51,8 @@ export default function QRRecordPrompt({
     (async () => {
       const t = await createRecordingSession(type, therapistId, {
         stimulusText,
+        syllables: syllables || [],
+        tonalPattern: tonalPattern || "",
       });
       if (cancelled) return;
       setToken(t);
@@ -56,7 +62,7 @@ export default function QRRecordPrompt({
     return () => {
       cancelled = true;
     };
-  }, [type, therapistId, stimulusText]);
+  }, [type, therapistId, stimulusText, syllables, tonalPattern]);
 
   // Subscribe to session status
   useEffect(() => {
@@ -113,10 +119,12 @@ export default function QRRecordPrompt({
 
     const t = await createRecordingSession(type, therapistId, {
       stimulusText,
+      syllables: syllables || [],
+      tonalPattern: tonalPattern || "",
     });
     setToken(t);
     setStatus("waiting");
-  }, [type, therapistId, stimulusText]);
+  }, [type, therapistId, stimulusText, syllables, tonalPattern]);
 
   // ── Render ──
 

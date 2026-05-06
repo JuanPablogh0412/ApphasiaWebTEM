@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { sendTherapistRequest } from "../../services/therapistService";
 import Footer from "../common/Footer";
+import logoApphasia from "../../assets/logoApphasia.png";
 import "./TerapeutaLogin.css";
 
 const TerapeutaRegistro = () => {
@@ -72,7 +73,7 @@ const TerapeutaRegistro = () => {
 
             {/* Logo Uniandes */}
             <div className="left-uniandes">
-              <img src="https://raw.githubusercontent.com/Tesis-Aphasia/Web-App-RehabilitIA/refs/heads/main/src/assets/logo_disc.png" alt="Uniandes" />
+              <img src={logoApphasia} alt="Uniandes" />
 
             </div>
           </div>
